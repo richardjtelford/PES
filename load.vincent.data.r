@@ -1,113 +1,117 @@
-library(RODBC)
-library(vegan)
-library(Hmisc)
-library(gdata)
-library(entropy)
-library(maps)
-library(mapdata)
+#load libraries
+library("vegan")
+library("dplyr")
+library("entropy")
+library("tidyr")
 
-setwd(  "\\\\nturt.uib.no\\gbsrt\\DATA\\pes\\")
-div<-function(x){apply(x,1,entropy.ChaoShen)}
+#functions
+div <- function(x) {
+  apply(x, 1, entropy.ChaoShen)
+}
 
-con<-odbcConnectAccess("Pes_db_8Feb2011.mdb")
+### access data from database
+con <- src_sqlite("data/PES_DB_8Feb2011.sqlite", create = FALSE)
 
-stations<-sqlQuery(con,"select * from pes_db_stations")
-names(stations)
+##stations
+stations <- tbl(con, "PES_DB_stations") %>%
+  collect()
 
-macro<-sqlQuery(con, "select * from pes_db_macrofauna_at_forams_stations")
-names(macro)<-make.names(names(macro))
+##macrofauna
+macro <- tbl(con, "PES_DB_macrofauna_at_forams_stations") %>%
+  collect()
 
-forams<-sqlQuery(con,"select * from PES_DB_foraminifera_species_data where slice_numeric>0 and not Size  = '>500' and dat>20050000 and slice_numeric<3")
-names(forams)<-make.names(names(forams))
-dim(forams)
+#replicate level
+macro3r <- macro %>% 
+  filter(DAT < 20050000) %>% 
+  select(-DAT, -SpeciesMacrofauna) %>%
+  spread(key = CodeMacrofauna, value = `Number*1`, fill = 0)
+###FAILS because of RC5/9 repeated sampling
+stop()
+macro8r <- macro %>% 
+  filter(DAT > 20050000) %>% group_by(Station_code, Replicate, CodeMacrofauna) %>% count() %>% arrange(desc(n))
+  select(-DAT, -SpeciesMacrofauna) %>% 
+  spread(key = CodeMacrofauna, value = `Number*1`, fill = 0)
 
-dead<-sqlQuery(con,"select * from PES_DB_foraminifera_species_dead_data")
-names(dead)<-make.names(names(dead))
-dim(dead)
+#site level
+macro3g <- macro %>% 
+  filter(DAT < 20050000) %>% 
+  group_by(Station_code, CodeMacrofauna) %>%
+  summarise(count = sum(`Number*1`)) %>%
+  spread(key = CodeMacrofauna, value = count, fill = 0)
+macro8g <- macro %>% 
+  filter(DAT > 20050000) %>% 
+  group_by(Station_code, CodeMacrofauna) %>%
+  summarise(count = sum(`Number*1`)) %>%
+  spread(key = CodeMacrofauna, value = count, fill = 0)
 
 
+##live forams
+forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where slice_numeric>0 and not Size  = '>500' and dat>20050000 and slice_numeric<3")) %>%
+  collect()
 
-chem0<-sqlQuery(con,"SELECT STAS, Chemical_species, Avg(IIf([Value]<-98,0,[value])) AS Val FROM PES_db_chemistry_data_flat WHERE (((DATE)>20050000) AND ((Slice_numeric)<1 Or (Slice_numeric) Is Null)) GROUP BY STAS, Chemical_species;")
+#replicate level
+foram3r <- forams %>% 
+  filter(DAT < 20050000) %>% #obviously fails because of about sql
+  group_by(Station_code, Replicate, SpeciesForam) %>% 
+  summarise(count = sum(`Number*1`)) %>%
+  spread(key = SpeciesForam, value = count, fill = 0)
 
-fspp<-sqlQuery(con,"select * from PES_DB_foraminifera_species_list")
-names(fspp)<-make.names(names(fspp))
+foram8r <- forams %>% 
+  filter(DAT > 20050000) %>% 
+  group_by(Station_code, Replicate, SpeciesForam) %>% 
+  summarise(count = sum(`Number*1`)) %>% # lump multiple depths
+  spread(key = SpeciesForam, value = count, fill = 0)
+
+#site level
+foram3g <- forams %>% 
+  filter(DAT < 20050000) %>%#fails because sql 
+  group_by(Station_code, SpeciesForam) %>%
+  summarise(count = sum(`Number*1`)) %>%
+  spread(key = SpeciesForam, value = count, fill = 0)
+foram8g <- forams %>% 
+  filter(DAT > 20050000) %>% 
+  group_by(Station_code, SpeciesForam) %>%
+  summarise(count = sum(`Number*1`)) %>%
+  spread(key = SpeciesForam, value = count, fill = 0)
 
 
-close(con)
+##dead forams
+dead <- tbl(con, "PES_DB_foraminifera_species_dead_data") %>%
+ rename(Number = `Number*1`) %>%
+ collect()
 
-###map
-map("worldHires",xlim=c(7.5,11.5), ylim=c(58,60))
-points(stations$"X_COORD_DECIMALDEGREE",stations$"Y_COORD_DECIMALDEGREE", col=2)
-box()
+##foram species
+fspp <- tbl(con,"PES_DB_foraminifera_species_list") %>%
+  rename(fspp, TestStructure = `Test structure`, Sensitivity = `Sensitivity (for ISI)`) %>%
+  collect()
 
+##chemistry
+#SQL was "SELECT STAS, Chemical_species, Avg(IIf([Value]<-98,0,[value])) AS Val FROM PES_db_chemistry_data_flat WHERE (((DATE)>20050000) AND ((Slice_numeric)<1 Or (Slice_numeric) Is Null)) GROUP BY STAS, Chemical_species"
 
-#chemistry data
-names(chem0)
-levels(chem0$STAS)
-levels(chem0$STAS)<-trim(levels(chem0$STAS))
-levels(chem0$STAS)
+chem0 <- tbl(con, "PES_db_chemistry_data_flat") %>% 
+  filter(DATE > 20050000, Slice_numeric < 1 | is.na(Slice_numeric)) %>%
+  filter(!Chemical_species %in% c("Zn","Cu","Pb", "Cd","H2S", "Chl c3")) %>% #unwanted variables
+  group_by(STAS, Chemical_species) %>%
+  mutate(Value = ifelse(Value < -98, 0, Value)) %>% #recode -99s as zero
+  summarise(Val = mean(Value)) %>% # mean chemistry per site
+  collect()
 
-table(chem0$Chem)
+chem0 <- chem0 %>%
+  ungroup() %>%
+  mutate(STAS = trimws(STAS)) %>%# zap trailing spaces
+  filter(STAS %in% c(macro$Station_code, forams$Station_code)) %>%# only sites with macro/foram data
+  filter(!Chemical_species %in% c("Pheophorbide", "Chl a allomer")) #too many missing values
 
-wantstation<-chem0$STAS%in%levels(macro$Station)|chem0$STAS%in%levels(forams$Station_code)
-unique(chem0$STAS[!wantstation])
-sum(wantstation)
-drop.chem<-c("Zn","Cu","Pb", "Cd","H2S", "Chl c3")
-chem1<-data.frame(unclass(xtabs(rep(1,nrow(chem0))~STAS+Chemical_species, data=chem0, subset=wantstation&!chem0$Chem%in%drop.chem, drop=T)))
-range(chem1)
-chem<-data.frame(unclass(xtabs(Val~STAS+Chemical_species, data=chem0, subset=wantstation&!chem0$Chem%in%drop.chem, drop=T)))
-
-chem[chem1==0]<-NA
-dim(chem)
-apply(chem,2,function(x)sum(is.na(x)))
-apply(chem,1,function(x)sum(is.na(x)))
-lapply(chem[,colSums(is.na(chem))>0],function(x)rownames(chem)[is.na(x)])
-
-chem$Chl.a.allomer<-NULL
-chem$Pheophorbide<-NULL
-
-#chem<-chem[rownames(chem)!="KRG",]
-
-sum(is.na(chem))  
+chem <- spread(chem0, key = Chemical_species, value = Val)
 
 #standardise pigments by TOC
 names(chem)         
-pig<- names(chem)%in%c("allo.xanthin","aphanizophyll","beta.carotene","cantha.xanthin","chl.a","chl.a.total..a.allom.","Chl.b","Chl.c2","diadino.xanthin","diato.xanthin","fuco.xanthin","lutein","peridinin","pheo.phytin.a","Pheophytin.b","Pyropheophytin.b", "violaxanthin","zea.xanthin")
+pig <- names(chem) %in% c("allo-xanthin","aphanizophyll","beta-carotene","cantha-xanthin","chl a","chl a total (a+allom)","Chl b","Chl c2","diadino-xanthin","diato-xanthin","fuco-xanthin","lutein","peridinin","pheo-phytin a","Pheophytin b","Pyropheophytin b", "violaxanthin","zea-xanthin")
 
-chem[,pig]<-chem[,pig]/chem$TOC
+chem[, pig] <- chem[, pig] / chem$TOC
 
-plot(chem$MinO2,chem$O2)
+plot(chem$MinO2_2_years, chem$O2)
 
-chem$mO2<-chem$MinO2_2_years
-chem$mO2[is.na(chem$mO2)]<-chem$O2[is.na(chem$mO2)]
-
-
-#macros
-
-macro3r<-xtabs(Number.1~paste(Station_code,Replicate, sep=":")+CodeMacrofauna, data=macro[macro$DAT<20050000,])
-macro8r<-xtabs(Number.1~paste(Station_code,Replicate, sep=":")+CodeMacrofauna, data=macro[macro$DAT>20050000,])
-
-macro3g<-xtabs(Number.1~Station_code+CodeMacrofauna, data=macro[macro$DAT<20050000,], drop=T)
-macro8g<-xtabs(Number.1~Station_code+CodeMacrofauna, data=macro[macro$DAT>20050000,], drop=T)
-
-rownames(macro3g)
-rownames(macro8g)
-
-
-rownames(macro3g)[!rownames(macro3g)%in%rownames(chem)]
-rownames(macro8g)[!rownames(macro8g)%in%rownames(chem)]
-
-rownames(chem)[!rownames(chem)%in%rownames(macro8g)]
-
-##########
-#forams
-foram3r<-xtabs(Number.1~paste(Station_code,Replicate, sep=":")+SpeciesForam, data=forams[forams$DAT<20050000,])
-foram8r<-xtabs(Number.1~paste(Station_code,Replicate, sep=":")+SpeciesForam, data=forams[forams$DAT>20050000,])
-
-dim(foram8r)
-dim(macro8r)
-
-foram3<-xtabs(Number.1~Station_code+SpeciesForam, data=forams[forams$DAT<20050000,], drop=T)
-foram8<-xtabs(Number.1~Station_code+SpeciesForam, data=forams[forams$DAT>20050000,], drop=T)
-
+chem$mO2 <- chem$MinO2_2_years
+chem$mO2[is.na(chem$mO2)] <- chem$O2[is.na(chem$mO2)]
 
