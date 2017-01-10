@@ -38,6 +38,7 @@ macro3g <- macro %>%
   group_by(Station_code, CodeMacrofauna) %>%
   summarise(count = sum(`Number*1`)) %>%
   spread(key = CodeMacrofauna, value = count, fill = 0)
+
 macro8g <- macro %>% 
   filter(DAT > 20050000) %>% 
   group_by(Station_code, CodeMacrofauna) %>%
@@ -46,12 +47,12 @@ macro8g <- macro %>%
 
 
 ##live forams
-forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where slice_numeric>0 and not Size  = '>500' and dat>20050000 and slice_numeric<3")) %>%
+forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where slice_numeric>0 and not Size  = '>500' and slice_numeric<3")) %>%
   collect()
 
 #replicate level
 foram3r <- forams %>% 
-  filter(DAT < 20050000) %>% #obviously fails because of about sql
+  filter(DAT < 20050000) %>% 
   group_by(Station_code, Replicate, SpeciesForam) %>% 
   summarise(count = sum(`Number*1`)) %>%
   spread(key = SpeciesForam, value = count, fill = 0)
@@ -64,7 +65,7 @@ foram8r <- forams %>%
 
 #site level
 foram3g <- forams %>% 
-  filter(DAT < 20050000) %>%#fails because sql 
+  filter(DAT < 20050000) %>%
   group_by(Station_code, SpeciesForam) %>%
   summarise(count = sum(`Number*1`)) %>%
   spread(key = SpeciesForam, value = count, fill = 0)
@@ -96,22 +97,36 @@ chem0 <- tbl(con, "PES_db_chemistry_data_flat") %>%
   summarise(Val = mean(Value)) %>% # mean chemistry per site
   collect()
 
+pigments <- c("allo-xanthin","aphanizophyll","beta-carotene","cantha-xanthin","chl a","chl a total (a+allom)","Chl b","Chl c2","diadino-xanthin","diato-xanthin","fuco-xanthin","lutein","peridinin","pheo-phytin a","Pheophytin b","Pyropheophytin b", "violaxanthin","zea-xanthin")
+
 chem0 <- chem0 %>%
   ungroup() %>%
   mutate(STAS = trimws(STAS)) %>%# zap trailing spaces
   filter(STAS %in% c(macro$Station_code, forams$Station_code)) %>%# only sites with macro/foram data
-  filter(!Chemical_species %in% c("Pheophorbide", "Chl a allomer")) #too many missing values
+  filter(!Chemical_species %in% c("Pheophorbide", "Chl a allomer")) %>% #too many missing values
+  left_join(
+    y = filter(., Chemical_species == "TOC") %>% select(-Chemical_species) %>% rename(TOC = Val),
+    by = c("STAS" = "STAS")
+  ) %>%
+  mutate(Val = ifelse(Chemical_species %in% pigments, Val/TOC, Val)) %>%#standardise pigments by TOC
+  select(-TOC)
+
 
 chem <- spread(chem0, key = Chemical_species, value = Val)
 
-#standardise pigments by TOC
-names(chem)         
-pig <- names(chem) %in% c("allo-xanthin","aphanizophyll","beta-carotene","cantha-xanthin","chl a","chl a total (a+allom)","Chl b","Chl c2","diadino-xanthin","diato-xanthin","fuco-xanthin","lutein","peridinin","pheo-phytin a","Pheophytin b","Pyropheophytin b", "violaxanthin","zea-xanthin")
 
-chem[, pig] <- chem[, pig] / chem$TOC
 
 plot(chem$MinO2_2_years, chem$O2)
+abline(0,1)
 
 chem$mO2 <- chem$MinO2_2_years
 chem$mO2[is.na(chem$mO2)] <- chem$O2[is.na(chem$mO2)]
-
+##
+o2 <- tbl(con, "PES_db_chemistry_data_flat") %>%  
+  filter(DATE > 20050000, Slice_numeric < 1 | is.na(Slice_numeric)) %>%
+  filter(Chemical_species %in% c("MinO2_2_years", "O2" )) %>% #unwanted variables
+  group_by(STAS, Chemical_species) %>%
+  mutate(Value = ifelse(Value < -98, 0, Value)) %>% #recode -99s as zero
+  summarise(mean = mean(Value), min = min(Value)) %>% # mean chemistry per site
+  collect()
+o2 %>% filter(Chemical_species == "O2") %>% ggplot(aes(x = mean, y = min)) + geom_point() + geom_abline(slope = 1, intercept = 0)
