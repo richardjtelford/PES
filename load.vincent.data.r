@@ -94,7 +94,9 @@ chem0 <- tbl(con, "PES_db_chemistry_data_flat") %>%
   filter(!Chemical_species %in% c("Zn","Cu","Pb", "Cd","H2S", "Chl c3")) %>% #unwanted variables
   group_by(STAS, Chemical_species) %>%
   mutate(Value = ifelse(Value < -98, 0, Value)) %>% #recode -99s as zero
-  summarise(Val = mean(Value)) %>% # mean chemistry per site
+  summarise(Val = mean(Value), min = min(Value)) %>% # mean chemistry per site
+  mutate(Val = ifelse(Chemical_species == "O2", min, Val)) %>%
+  select(-min) %>%
   collect()
 
 pigments <- c("allo-xanthin","aphanizophyll","beta-carotene","cantha-xanthin","chl a","chl a total (a+allom)","Chl b","Chl c2","diadino-xanthin","diato-xanthin","fuco-xanthin","lutein","peridinin","pheo-phytin a","Pheophytin b","Pyropheophytin b", "violaxanthin","zea-xanthin")
@@ -111,22 +113,12 @@ chem0 <- chem0 %>%
   mutate(Val = ifelse(Chemical_species %in% pigments, Val/TOC, Val)) %>%#standardise pigments by TOC
   select(-TOC)
 
+O2 <- chem0 %>% filter(Chemical_species %in% c("O2", "MinO2_2_years")) %>% 
+  spread(key = Chemical_species, value = Val) %>%
+  mutate(Val = ifelse(is.na(MinO2_2_years), O2, MinO2_2_years)) %>% 
+  mutate(Chemical_species = "mO2") %>%
+  select(-O2, -MinO2_2_years)
+
+chem0 <- bind_rows(chem0, O2)
 
 chem <- spread(chem0, key = Chemical_species, value = Val)
-
-
-
-plot(chem$MinO2_2_years, chem$O2)
-abline(0,1)
-
-chem$mO2 <- chem$MinO2_2_years
-chem$mO2[is.na(chem$mO2)] <- chem$O2[is.na(chem$mO2)]
-##
-o2 <- tbl(con, "PES_db_chemistry_data_flat") %>%  
-  filter(DATE > 20050000, Slice_numeric < 1 | is.na(Slice_numeric)) %>%
-  filter(Chemical_species %in% c("MinO2_2_years", "O2" )) %>% #unwanted variables
-  group_by(STAS, Chemical_species) %>%
-  mutate(Value = ifelse(Value < -98, 0, Value)) %>% #recode -99s as zero
-  summarise(mean = mean(Value), min = min(Value)) %>% # mean chemistry per site
-  collect()
-o2 %>% filter(Chemical_species == "O2") %>% ggplot(aes(x = mean, y = min)) + geom_point() + geom_abline(slope = 1, intercept = 0)
