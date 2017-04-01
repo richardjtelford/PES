@@ -1,8 +1,8 @@
 #load libraries
 library("vegan")
-library("dplyr")
+library("tidyverse")
 library("entropy")
-library("tidyr")
+library("lubridate")
 
 #functions
 div <- function(x) {
@@ -25,10 +25,12 @@ macro3r <- macro %>%
   filter(DAT < 20050000) %>% 
   select(-DAT, -SpeciesMacrofauna) %>%
   spread(key = CodeMacrofauna, value = `Number*1`, fill = 0)
-###FAILS because of RC5/9 repeated sampling
-stop()
+
 macro8r <- macro %>% 
-  filter(DAT > 20050000) %>% group_by(Station_code, Replicate, CodeMacrofauna) %>% count() %>% arrange(desc(n))
+  filter(DAT > 20050000) %>%
+  mutate(DAT = ymd(DAT)) %>%
+  mutate(month = month(DAT,  label = TRUE, abbr = TRUE)) %>% count(Station_code, month)
+  filter()
   select(-DAT, -SpeciesMacrofauna) %>% 
   spread(key = CodeMacrofauna, value = `Number*1`, fill = 0)
 
