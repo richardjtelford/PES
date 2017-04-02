@@ -1,7 +1,6 @@
 #### Analyses of surface data
 
 ## load packages
-library("ggplot2")
 library("vegan")
 library("cocorresp")
 
@@ -11,21 +10,14 @@ source("load.vincent.data.r")
 #remove unwanted chemistry sites
 #HV16 and KV01 have no O2 data. Not sure why KRG was deleted
 chem0 <- chem0 %>% filter(!Station_code %in% c("HV16", "KV01", "KRG"))
-chem <- chem %>% filter(!Station_code %in% c("HV16", "KV01", "KRG"))
 
 
-#histogram of chemistry ## not normalised pigments
+#histogram of chemistry
 ggplot(chem0, aes(x = Val)) + 
   geom_histogram(bins = 10) + 
   facet_wrap(~ Chemical_species, scales = "free_x")
 
-#fx
-chem[,pig]<-sapply(chem[,pig], function(x)log(x+.5*min(x[x>0])))
-
-x11();par(mfrow=c(5,5), mar=c(3,3,1,1), mgp=c(1.5,.5,0))
-mapply(hist,x=chem, main=colnames(chem), xlab="")
-
-
+#PCA of chemistry
 chem.pca <- prcomp(chem, scale. = TRUE)
 
 

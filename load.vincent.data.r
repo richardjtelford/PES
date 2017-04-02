@@ -133,8 +133,6 @@ O2 <- chem0 %>% filter(Chemical_species %in% c("O2", "MinO2_2_years")) %>%
 
 chem0 <- bind_rows(chem0, O2)
 
-chem <- spread(chem0, key = Chemical_species, value = Val)
-
 #tidyup
 rm(O2)
 
