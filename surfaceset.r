@@ -8,10 +8,10 @@ library("cocorresp")
 ## load data
 source("load.vincent.data.r")
 
-#fx
-chem<-chem[rownames(chem)!="HV16",]
-chem<-chem[rownames(chem)!="KV01",]
-chem<-chem[rownames(chem)!="KRG",]
+#remove unwanted chemistry sites
+#HV16 and KV01 have no O2 data. Not sure why KRG was deleted
+chem0 <- chem0 %>% filter(!Station_code %in% c("HV16", "KV01", "KRG"))
+chem <- chem %>% filter(!Station_code %in% c("HV16", "KV01", "KRG"))
 
 
 #histogram of chemistry ## not normalised pigments
