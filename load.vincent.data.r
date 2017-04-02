@@ -90,7 +90,7 @@ dead <- tbl(con, "PES_DB_foraminifera_species_dead_data") %>%
 
 ##foram species
 fspp <- tbl(con,"PES_DB_foraminifera_species_list") %>%
-  rename(fspp, TestStructure = `Test structure`, Sensitivity = `Sensitivity (for ISI)`) %>%
+  rename(TestStructure = `Test structure`, Sensitivity = `Sensitivity (for ISI)`) %>%
   collect()
 
 ##chemistry
