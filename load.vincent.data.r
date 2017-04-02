@@ -18,31 +18,32 @@ stations <- tbl(con, "PES_DB_stations") %>%
 
 ##macrofauna
 macro <- tbl(con, "PES_DB_macrofauna_at_forams_stations") %>%
-  collect()
+  collect() %>%
+  mutate(DAT = ymd(DAT))
 
 #replicate level
 macro3r <- macro %>% 
-  filter(DAT < 20050000) %>% 
+  filter(DAT < "2005-01-01") %>% 
   select(-DAT, -SpeciesMacrofauna) %>%
   spread(key = CodeMacrofauna, value = `Number*1`, fill = 0)
 
+RC  <- c("RC5", "RC9")# sites with multiple samples.
 macro8r <- macro %>% 
-  filter(DAT > 20050000) %>%
-  mutate(DAT = ymd(DAT)) %>%
-  mutate(month = month(DAT,  label = TRUE, abbr = TRUE)) %>% count(Station_code, month)
-  filter()
+  filter(DAT > "2005-01-01") %>%
+  filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) %>% #only September samples from RC5/9
   select(-DAT, -SpeciesMacrofauna) %>% 
   spread(key = CodeMacrofauna, value = `Number*1`, fill = 0)
 
 #site level
 macro3g <- macro %>% 
-  filter(DAT < 20050000) %>% 
+  filter(DAT < "2005-01-01") %>% 
   group_by(Station_code, CodeMacrofauna) %>%
   summarise(count = sum(`Number*1`)) %>%
   spread(key = CodeMacrofauna, value = count, fill = 0)
 
 macro8g <- macro %>% 
-  filter(DAT > 20050000) %>% 
+  filter(DAT > "2005-01-01") %>% 
+  filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) %>% #only September samples from RC5/9
   group_by(Station_code, CodeMacrofauna) %>%
   summarise(count = sum(`Number*1`)) %>%
   spread(key = CodeMacrofauna, value = count, fill = 0)
@@ -50,29 +51,30 @@ macro8g <- macro %>%
 
 ##live forams
 forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where slice_numeric>0 and not Size  = '>500' and slice_numeric<3")) %>%
-  collect()
+  collect() %>%
+  mutate(DAT = ymd(DAT))
 
 #replicate level
 foram3r <- forams %>% 
-  filter(DAT < 20050000) %>% 
+  filter(DAT < "2005-01-01") %>% 
   group_by(Station_code, Replicate, SpeciesForam) %>% 
   summarise(count = sum(`Number*1`)) %>%
   spread(key = SpeciesForam, value = count, fill = 0)
 
 foram8r <- forams %>% 
-  filter(DAT > 20050000) %>% 
+  filter(DAT > "2005-01-01") %>% 
   group_by(Station_code, Replicate, SpeciesForam) %>% 
   summarise(count = sum(`Number*1`)) %>% # lump multiple depths
   spread(key = SpeciesForam, value = count, fill = 0)
 
 #site level
 foram3g <- forams %>% 
-  filter(DAT < 20050000) %>%
+  filter(DAT < "2005-01-01") %>%
   group_by(Station_code, SpeciesForam) %>%
   summarise(count = sum(`Number*1`)) %>%
   spread(key = SpeciesForam, value = count, fill = 0)
 foram8g <- forams %>% 
-  filter(DAT > 20050000) %>% 
+  filter(DAT > "2005-01-01") %>% 
   group_by(Station_code, SpeciesForam) %>%
   summarise(count = sum(`Number*1`)) %>%
   spread(key = SpeciesForam, value = count, fill = 0)
