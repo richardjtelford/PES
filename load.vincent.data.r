@@ -135,9 +135,6 @@ chem <- spread(chem0, key = Chemical_species, value = Val)
 m83 <- macro8r %>% filter(Station_code %in% macro3r$Station_code)
 m38 <- macro3r %>% filter(Station_code %in% macro8r$Station_code)
 
-foram3r<-foram3r[rowSums(foram3r>0)>0,]
-foram8r<-foram8r[rowSums(foram8r>0)>0,]
-
 foram38<-foram3r[rownames(foram3r)%in%rownames(foram8r),]
 foram83<-foram8r[rownames(foram8r)%in%rownames(foram3r),]
 
