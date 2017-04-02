@@ -63,6 +63,7 @@ foram3r <- forams %>%
 
 foram8r <- forams %>% 
   filter(DAT > "2005-01-01") %>% 
+  filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) %>% #only September samples from RC5/9
   group_by(Station_code, Replicate, SpeciesForam) %>% 
   summarise(count = sum(`Number*1`)) %>% # lump multiple depths
   spread(key = SpeciesForam, value = count, fill = 0)
@@ -73,8 +74,10 @@ foram3g <- forams %>%
   group_by(Station_code, SpeciesForam) %>%
   summarise(count = sum(`Number*1`)) %>%
   spread(key = SpeciesForam, value = count, fill = 0)
+
 foram8g <- forams %>% 
   filter(DAT > "2005-01-01") %>% 
+  filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) %>% #only September samples from RC5/9
   group_by(Station_code, SpeciesForam) %>%
   summarise(count = sum(`Number*1`)) %>%
   spread(key = SpeciesForam, value = count, fill = 0)
