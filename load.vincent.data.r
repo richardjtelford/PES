@@ -117,9 +117,13 @@ chem0 <- chem0 %>%
   left_join(
     y = filter(., Chemical_species == "TOC") %>% select(-Chemical_species) %>% rename(TOC = Val),
     by = c("Station_code" = "Station_code")
-  ) %>%
+  ) %>% #left join to TOC data
   mutate(Val = ifelse(Chemical_species %in% pigments, Val/TOC, Val)) %>%#standardise pigments by TOC
-  select(-TOC)
+  group_by(Chemical_species) %>%
+  mutate(min_value = min(Val, na.rm = TRUE)) %>%
+  mutate(Val = ifelse(Chemical_species %in% pigments, log(Val + min_value/2), Val)) %>% #Replace zeros with half minimum value & log 
+  select(-TOC, - min_value) 
+  
 
 O2 <- chem0 %>% filter(Chemical_species %in% c("O2", "MinO2_2_years")) %>% 
   spread(key = Chemical_species, value = Val) %>%
@@ -130,6 +134,9 @@ O2 <- chem0 %>% filter(Chemical_species %in% c("O2", "MinO2_2_years")) %>%
 chem0 <- bind_rows(chem0, O2)
 
 chem <- spread(chem0, key = Chemical_species, value = Val)
+
+#tidyup
+rm(O2)
 
 #Generate data sets with harmonised site lists f/m & f/m/c
 
