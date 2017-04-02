@@ -129,3 +129,25 @@ O2 <- chem0 %>% filter(Chemical_species %in% c("O2", "MinO2_2_years")) %>%
 chem0 <- bind_rows(chem0, O2)
 
 chem <- spread(chem0, key = Chemical_species, value = Val)
+
+#Generate data sets with harmonised site lists f/m & f/m/c 2008 only
+
+m83<-macro8r[rownames(macro8r)%in%rownames(macro3r),]#fx
+m38<-macro3r[rownames(macro3r)%in%rownames(macro8r),]#fx
+
+foram3r<-foram3r[rowSums(foram3r>0)>0,]
+foram8r<-foram8r[rowSums(foram8r>0)>0,]
+
+foram38<-foram3r[rownames(foram3r)%in%rownames(foram8r),]
+foram83<-foram8r[rownames(foram8r)%in%rownames(foram3r),]
+
+macro8gf<-macro8g[rownames(macro8g)%in%rownames(foram8),]
+foram8m<-foram8[rownames(foram8)%in%rownames(macro8g),]
+
+macro8gf<-decostand(macro8g[rownames(macro8g)%in%rownames(foram8),],"total")
+foram8m<-decostand(foram8[rownames(foram8)%in%rownames(macro8g),],"total")
+
+
+
+identical(rownames(macro8gf),rownames(foram8m))
+

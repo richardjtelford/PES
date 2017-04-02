@@ -59,8 +59,6 @@ RDAoc <- rda(chem[, pig] ~ O2 + TOC, data = chem[, !pig], scale = TRUE)
 RDAoc
 
 #macros
-m83<-macro8r[rownames(macro8r)%in%rownames(macro3r),]#fx
-m38<-macro3r[rownames(macro3r)%in%rownames(macro8r),]#fx
 
 x11();
 boxplot(cbind(rowSums(m38),rowSums(m83)))#did the volume sampled remain constant?  --YES, Knockout in 2008
@@ -132,11 +130,7 @@ identical(names(div.f), names(div.m))
 boxplot(list(foram = div.f, macro = div.m))
 wilcox.test(div.f, div.m, paired = TRUE)
 
-foram3r<-foram3r[rowSums(foram3r>0)>0,]
-foram8r<-foram8r[rowSums(foram8r>0)>0,]
-                        
-foram38<-foram3r[rownames(foram3r)%in%rownames(foram8r),]
-foram83<-foram8r[rownames(foram8r)%in%rownames(foram3r),]
+
 
 plot(rowSums(foram38),rowSums( foram83), xlab="2003 no individuals",ylab="2008 no individuals")
 abline(0,1)
@@ -161,8 +155,7 @@ modf
 plot(modf)
 
 
-macro8gf<-macro8g[rownames(macro8g)%in%rownames(foram8),]
-foram8m<-foram8[rownames(foram8)%in%rownames(macro8g),]
+
 
 
 plot(vegdist(macro8gf[rowSums(macro8gf)>10,]),vegdist(foram8m[rowSums(macro8gf)>10,]))
@@ -173,12 +166,6 @@ x11();
 plot(sort(colSums(macro8), dec=TRUE), log="y")
 
  #co=correspondance
-macro8gf<-decostand(macro8g[rownames(macro8g)%in%rownames(foram8),],"total")
-foram8m<-decostand(foram8[rownames(foram8)%in%rownames(macro8g),],"total")
-
-
-
-identical(rownames(macro8gf),rownames(foram8m))
 
 plot(vegdist(macro8gf[rowSums(macro8gf)>10,]),vegdist(foram8m[rowSums(macro8gf)>10,]))
 mantel(vegdist(macro8gf),vegdist(foram8m))
