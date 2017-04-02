@@ -99,7 +99,8 @@ fspp <- tbl(con,"PES_DB_foraminifera_species_list") %>%
 chem0 <- tbl(con, "PES_db_chemistry_data_flat") %>% 
   filter(DATE > 20050000, Slice_numeric < 1 | is.na(Slice_numeric)) %>%
   filter(!Chemical_species %in% c("Zn","Cu","Pb", "Cd","H2S", "Chl c3")) %>% #unwanted variables
-  group_by(STAS, Chemical_species) %>%
+  rename(Station_code = STAS) %>%
+  group_by(Station_code, Chemical_species) %>%
   mutate(Value = ifelse(Value < -98, 0, Value)) %>% #recode -99s as zero
   summarise(Val = mean(Value), min = min(Value)) %>% # mean chemistry per site
   mutate(Val = ifelse(Chemical_species == "O2", min, Val)) %>%
@@ -110,12 +111,12 @@ pigments <- c("allo-xanthin","aphanizophyll","beta-carotene","cantha-xanthin","c
 
 chem0 <- chem0 %>%
   ungroup() %>%
-  mutate(STAS = trimws(STAS)) %>%# zap trailing spaces
-  filter(STAS %in% c(macro$Station_code, forams$Station_code)) %>%# only sites with macro/foram data
+  mutate(Station_code = trimws(Station_code)) %>%#zap trailing spaces
+  filter(Station_code %in% c(macro$Station_code, forams$Station_code)) %>%# only sites with macro/foram data
   filter(!Chemical_species %in% c("Pheophorbide", "Chl a allomer")) %>% #too many missing values
   left_join(
     y = filter(., Chemical_species == "TOC") %>% select(-Chemical_species) %>% rename(TOC = Val),
-    by = c("STAS" = "STAS")
+    by = c("Station_code" = "Station_code")
   ) %>%
   mutate(Val = ifelse(Chemical_species %in% pigments, Val/TOC, Val)) %>%#standardise pigments by TOC
   select(-TOC)
@@ -135,14 +136,14 @@ chem <- spread(chem0, key = Chemical_species, value = Val)
 m83 <- macro8r %>% filter(Station_code %in% macro3r$Station_code)
 m38 <- macro3r %>% filter(Station_code %in% macro8r$Station_code)
 
-foram38<-foram3r[rownames(foram3r)%in%rownames(foram8r),]
-foram83<-foram8r[rownames(foram8r)%in%rownames(foram3r),]
+foram83<-foram8r %>% filter(Station_code %in% foram3r$Station_code)
+foram38<-foram3r %>% filter(Station_code %in% foram8r$Station_code)
 
-macro8gf<-macro8g[rownames(macro8g)%in%rownames(foram8),]
-foram8m<-foram8[rownames(foram8)%in%rownames(macro8g),]
+macro8gf<-macro8g %>% filter(Station_code %in% foram8g$Station_code)
+foram8m<-foram8g %>% filter(Station_code %in% macro3r$Station_code)
 
-macro8gf<-decostand(macro8g[rownames(macro8g)%in%rownames(foram8),],"total")
-foram8m<-decostand(foram8[rownames(foram8)%in%rownames(macro8g),],"total")
+#macro8gf <- decostand(macro8g[rownames(macro8g) %in% rownames(foram8), ], "total")
+#foram8m <-decostand(foram8[rownames(foram8) %in% rownames(macro8g), ], "total")
 
 
 
