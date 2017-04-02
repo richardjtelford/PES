@@ -130,10 +130,10 @@ chem0 <- bind_rows(chem0, O2)
 
 chem <- spread(chem0, key = Chemical_species, value = Val)
 
-#Generate data sets with harmonised site lists f/m & f/m/c 2008 only
+#Generate data sets with harmonised site lists f/m & f/m/c
 
-m83<-macro8r[rownames(macro8r)%in%rownames(macro3r),]#fx
-m38<-macro3r[rownames(macro3r)%in%rownames(macro8r),]#fx
+m83 <- macro8r %>% filter(Station_code %in% macro3r$Station_code)
+m38 <- macro3r %>% filter(Station_code %in% macro8r$Station_code)
 
 foram3r<-foram3r[rowSums(foram3r>0)>0,]
 foram8r<-foram8r[rowSums(foram8r>0)>0,]
