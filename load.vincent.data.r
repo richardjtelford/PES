@@ -109,6 +109,10 @@ chem0 <- tbl(con, "PES_db_chemistry_data_flat") %>%
 
 pigments <- c("allo-xanthin","aphanizophyll","beta-carotene","cantha-xanthin","chl a","chl a total (a+allom)","Chl b","Chl c2","diadino-xanthin","diato-xanthin","fuco-xanthin","lutein","peridinin","pheo-phytin a","Pheophytin b","Pyropheophytin b", "violaxanthin","zea-xanthin")
 
+min0 <- function(x) {
+  min(x[x > 0], na.rm = TRUE)
+}
+
 chem0 <- chem0 %>%
   ungroup() %>%
   mutate(Station_code = trimws(Station_code)) %>%#zap trailing spaces
@@ -120,9 +124,8 @@ chem0 <- chem0 %>%
   ) %>% #left join to TOC data
   mutate(Val = ifelse(Chemical_species %in% pigments, Val/TOC, Val)) %>%#standardise pigments by TOC
   group_by(Chemical_species) %>%
-  mutate(min_value = min(Val, na.rm = TRUE)) %>%
-  mutate(Val = ifelse(Chemical_species %in% pigments, log(Val + min_value/2), Val)) %>% #Replace zeros with half minimum value & log 
-  select(-TOC, - min_value) 
+  mutate(Val = ifelse(Chemical_species %in% pigments, log(Val + min0(Val)/2), Val)) %>% #Replace zeros with half minimum value & log 
+  select(-TOC) 
   
 
 O2 <- chem0 %>% filter(Chemical_species %in% c("O2", "MinO2_2_years")) %>% 
@@ -133,6 +136,7 @@ O2 <- chem0 %>% filter(Chemical_species %in% c("O2", "MinO2_2_years")) %>%
 
 chem0 <- bind_rows(chem0, O2)
 
+chem <- spread(chem0, key = Chemical_species, value = Val)
 #tidyup
 rm(O2)
 
