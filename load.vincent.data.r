@@ -145,7 +145,9 @@ chem0 <- chem0 %>% filter(!Station_code %in% c("HV16", "KV01", "KRG")) %>%
 #spread
 
 chem <- spread(chem0, key = Chemical_species, value = Val) %>% 
-  mutate(ppna = `pheo.phytin.a` + `chl.a.total..a.allom.`)
+  mutate(ppna = `pheo-phytin a` + `chl a total (a+allom)`) %>%
+  select(-`pheo-phytin a`, -`chl a total (a+allom)`) %>% 
+  select(Station_code, `%<63`, `allo-xanthin`,`beta-carotene`,`diato-xanthin`,lutein, O2, TN, TOC,`zea-xanthin`, ppna) %>% #"Cd","Cu""Pb","Zn"
   assert(not_na, -Station_code) #check no NAs
 
 
