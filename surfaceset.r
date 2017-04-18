@@ -25,6 +25,7 @@ x11()
 plot(chem.pca)
 screeplot(chem.pca, bstick=TRUE)
 biplot(chem.pca)
+autoplot(chem.pca)
 
 pairs(chem, col = ifelse(rownames(chem) == "GRO50", 2, 1), gap = 0)
 plot(chem$TOC, chem$X)
