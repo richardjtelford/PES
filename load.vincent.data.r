@@ -3,6 +3,7 @@ library("vegan")
 library("tidyverse")
 library("entropy")
 library("lubridate")
+library("assertr")
 
 #functions
 div <- function(x) {
@@ -116,7 +117,7 @@ min0 <- function(x) {
 chem0 <- chem0 %>%
   ungroup() %>%
   mutate(Station_code = trimws(Station_code)) %>%#zap trailing spaces
-  filter(Station_code %in% c(macro$Station_code, forams$Station_code)) %>%# only sites with macro/foram data
+  filter(Station_code %in% intersect(macro8g$Station_code, foram8g$Station_code)) %>%# only sites with 2008 macro AND foram data
   filter(!Chemical_species %in% c("Pheophorbide", "Chl a allomer")) %>% #too many missing values
   left_join(
     y = filter(., Chemical_species == "TOC") %>% select(-Chemical_species) %>% rename(TOC = Val),
@@ -136,7 +137,19 @@ O2 <- chem0 %>% filter(Chemical_species %in% c("O2", "MinO2_2_years")) %>%
 
 chem0 <- bind_rows(chem0, O2)
 
-chem <- spread(chem0, key = Chemical_species, value = Val)
+#remove unwanted chemistry sites
+#HV16 and KV01 have no O2 data. Not sure why KRG was deleted
+chem0 <- chem0 %>% filter(!Station_code %in% c("HV16", "KV01", "KRG")) %>%
+  filter(!Chemical_species %in% c("MinO2_2_years", "mO2"))
+
+#spread
+
+chem <- spread(chem0, key = Chemical_species, value = Val) %>% 
+  mutate(ppna = `pheo.phytin.a` + `chl.a.total..a.allom.`)
+  assert(not_na, -Station_code) #check no NAs
+
+
+
 #tidyup
 rm(O2)
 
