@@ -114,10 +114,13 @@ min0 <- function(x) {
   min(x[x > 0], na.rm = TRUE)
 }
 
+
+unified_site_list <- intersect(chem$Station_code, intersect(macro8g$Station_code, foram8g$Station_code)) # sites with all variables # would miss abiotic sites
+
 chem0 <- chem0 %>%
   ungroup() %>%
   mutate(Station_code = trimws(Station_code)) %>%#zap trailing spaces
-  filter(Station_code %in% intersect(macro8g$Station_code, foram8g$Station_code)) %>%# only sites with 2008 macro AND foram data
+  filter(Station_code %in% unified_site_list) %>%# only sites with 2008 macro AND foram data
   filter(!Chemical_species %in% c("Pheophorbide", "Chl a allomer")) %>% #too many missing values
   left_join(
     y = filter(., Chemical_species == "TOC") %>% select(-Chemical_species) %>% rename(TOC = Val),
@@ -125,7 +128,6 @@ chem0 <- chem0 %>%
   ) %>% #left join to TOC data
   mutate(Val = ifelse(Chemical_species %in% pigments, Val/TOC, Val)) %>%#standardise pigments by TOC
   group_by(Chemical_species) %>%
-  mutate(Val = ifelse(Chemical_species %in% pigments, log(Val + min0(Val)/2), Val)) %>% #Replace zeros with half minimum value & log 
   select(-TOC) 
   
 
@@ -150,21 +152,24 @@ chem <- spread(chem0, key = Chemical_species, value = Val) %>%
   select(Station_code, `%<63`, `allo-xanthin`,`beta-carotene`,`diato-xanthin`,lutein, O2, TN, TOC,`zea-xanthin`, ppna) %>% #"Cd","Cu""Pb","Zn"
   assert(not_na, -Station_code) #check no NAs
 
-
+pigments <- c(pigments, "ppna")
+chem[names(chem) %in% pigments] <- sapply(chem[names(chem) %in% pigments], function(x){
+    log(x + min0(x)/2) #log(x + k) where k is half minimum value
+  })
 
 #tidyup
 rm(O2)
 
 #Generate data sets with harmonised site lists f/m & f/m/c
 
-m83 <- macro8r %>% filter(Station_code %in% macro3r$Station_code)
-m38 <- macro3r %>% filter(Station_code %in% macro8r$Station_code)
+m83 <- macro8r %>% filter(Station_code %in% unified_site_list )
+m38 <- macro3r %>% filter(Station_code %in% unified_site_list )
 
-foram83<-foram8r %>% filter(Station_code %in% foram3r$Station_code)
-foram38<-foram3r %>% filter(Station_code %in% foram8r$Station_code)
+foram83<-foram8r %>% filter(Station_code %in% unified_site_list )
+foram38<-foram3r %>% filter(Station_code %in% unified_site_list )
 
-macro8gf<-macro8g %>% filter(Station_code %in% foram8g$Station_code)
-foram8m<-foram8g %>% filter(Station_code %in% macro3r$Station_code)
+macro8gf<-macro8g %>% filter(Station_code %in% unified_site_list )
+foram8m<-foram8g %>% filter(Station_code %in% unified_site_list )
 
 #macro8gf <- decostand(macro8g[rownames(macro8g) %in% rownames(foram8), ], "total")
 #foram8m <-decostand(foram8[rownames(foram8) %in% rownames(macro8g), ], "total")
