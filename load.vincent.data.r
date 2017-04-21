@@ -10,18 +10,28 @@ div <- function(x) {
   apply(x, 1, entropy.ChaoShen)
 }
 
+cleanStationCodes <- function(codes){
+  codes <- trimws(codes) # remove whitespace
+  codes <- gsub("_", "", codes) # remove underscores
+  codes <- gsub("^0", "", codes) # remove leading zeros
+  codes <- recode(codes, R060 = "R60", R080 = "R80", GRO = "G69", GRO50 = "G50", GRO40 = "G40", GRO60 = "G60") # replace with alternative code
+  codes
+}
+
 ### access data from database
 con <- src_sqlite("data/PES_DB_8Feb2011.sqlite", create = FALSE)
 
 ##stations
 stations <- tbl(con, "PES_DB_stations") %>%
   rename(Station_code = STATION) %>% 
-  collect()
+  collect() %>% 
+  mutate(Station_code = cleanStationCodes(Station_code))
 
 ##macrofauna
 macro <- tbl(con, "PES_DB_macrofauna_at_forams_stations") %>%
   collect() %>%
-  mutate(DAT = ymd(DAT))
+  mutate(DAT = ymd(DAT)) %>% 
+  mutate(Station_code = cleanStationCodes(Station_code))
 
 #replicate level
 macro3r <- macro %>% 
@@ -54,7 +64,8 @@ macro8g <- macro %>%
 ##live forams
 forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where slice_numeric>0 and not Size  = '>500' and slice_numeric<3")) %>%
   collect() %>%
-  mutate(DAT = ymd(DAT))
+  mutate(DAT = ymd(DAT)) %>% 
+  mutate(Station_code = cleanStationCodes(Station_code))
 
 #replicate level
 foram3r <- forams %>% 
@@ -87,8 +98,9 @@ foram8g <- forams %>%
 
 ##dead forams
 dead <- tbl(con, "PES_DB_foraminifera_species_dead_data") %>%
- rename(Number = `Number*1`) %>%
- collect()
+  rename(Number = `Number*1`) %>%
+  collect() %>% 
+  mutate(Station_code = cleanStationCodes(Station_code))
 
 ##foram species
 fspp <- tbl(con,"PES_DB_foraminifera_species_list") %>%
@@ -109,8 +121,9 @@ chem0 <- tbl(con, "PES_db_chemistry_data_flat") %>%
   select(-min) %>%
   collect() %>% 
   ungroup() %>% 
-  mutate(Station_code = trimws(Station_code)) %>% #zap trailing spaces
-group_by(Station_code, Chemical_species)
+  mutate(Station_code = cleanStationCodes(Station_code)) %>%
+  group_by(Station_code, Chemical_species) %>% 
+  filter(!Station_code %in% c("HV16", "KV01", "KRG")) # remove unwanted chemistry stations
 
 
 
@@ -151,7 +164,7 @@ chem0 <- bind_rows(chem0, O2)
 
 #remove unwanted chemistry sites
 #HV16 and KV01 have no O2 data. Not sure why KRG was deleted
-chem0 <- chem0 %>% filter(!Station_code %in% c("HV16", "KV01", "KRG")) %>%
+chem0 <- chem0 %>%
   filter(!Chemical_species %in% c("MinO2_2_years", "mO2"))
 
 #spread
