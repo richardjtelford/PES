@@ -107,7 +107,12 @@ chem0 <- tbl(con, "PES_db_chemistry_data_flat") %>%
   summarise(Val = mean(Value), min = min(Value)) %>% # mean chemistry per site
   mutate(Val = ifelse(Chemical_species == "O2", min, Val)) %>%
   select(-min) %>%
-  collect()
+  collect() %>% 
+  ungroup() %>% 
+  mutate(Station_code = trimws(Station_code)) %>% #zap trailing spaces
+group_by(Station_code, Chemical_species)
+
+
 
 pigments <- c("allo-xanthin","aphanizophyll","beta-carotene","cantha-xanthin","chl a","chl a total (a+allom)","Chl b","Chl c2","diadino-xanthin","diato-xanthin","fuco-xanthin","lutein","peridinin","pheo-phytin a","Pheophytin b","Pyropheophytin b", "violaxanthin","zea-xanthin")
 
@@ -115,12 +120,16 @@ min0 <- function(x) {
   min(x[x > 0], na.rm = TRUE)
 }
 
-
-unified_site_list <- intersect(chem$Station_code, intersect(macro8g$Station_code, foram8g$Station_code)) # sites with all variables # would miss abiotic sites
+#unified site list
+allSites <- list(
+  chem = unique(chem0$Station_code),
+  macro = macro8g$Station_code,
+  foram = foram8g$Station_code
+)
+unified_site_list <- Reduce(intersect, allSites) # sites with all variables # would miss abiotic sites
 
 chem0 <- chem0 %>%
   ungroup() %>%
-  mutate(Station_code = trimws(Station_code)) %>%#zap trailing spaces
   filter(Station_code %in% unified_site_list) %>%# only sites with 2008 macro AND foram data
   filter(!Chemical_species %in% c("Pheophorbide", "Chl a allomer")) %>% #too many missing values
   left_join(
