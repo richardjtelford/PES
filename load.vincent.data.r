@@ -15,6 +15,7 @@ con <- src_sqlite("data/PES_DB_8Feb2011.sqlite", create = FALSE)
 
 ##stations
 stations <- tbl(con, "PES_DB_stations") %>%
+  rename(Station_code = STATION) %>% 
   collect()
 
 ##macrofauna
@@ -151,6 +152,15 @@ chem <- spread(chem0, key = Chemical_species, value = Val) %>%
   select(-`pheo-phytin a`, -`chl a total (a+allom)`) %>% 
   select(Station_code, `%<63`, `allo-xanthin`,`beta-carotene`,`diato-xanthin`,lutein, O2, TN, TOC,`zea-xanthin`, ppna) %>% #"Cd","Cu""Pb","Zn"
   assert(not_na, -Station_code) #check no NAs
+
+chem <- chem %>% 
+  full_join(
+    stations %>% 
+      filter(Station_code %in% unified_site_list) %>% 
+      select(Station_code, DEPTH_BELOW_THRESHOLD) %>%
+      rename(`Depth Below Threshold` = DEPTH_BELOW_THRESHOLD)
+  ) %>% 
+  assert(not_na, -Station_code)
 
 pigments <- c(pigments, "ppna")
 chem[names(chem) %in% pigments] <- sapply(chem[names(chem) %in% pigments], function(x){
