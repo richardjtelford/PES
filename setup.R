@@ -34,6 +34,7 @@ CRAN_needed <- read.table(header = TRUE, stringsAsFactors = FALSE, text =
    GGally
    ggfortify
    entropy
+   cocorresp
   ")$package
 
 #check against currently installed packages
