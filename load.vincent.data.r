@@ -176,7 +176,7 @@ chem <- spread(chem0, key = Chemical_species, value = Val) %>%
   assert(not_na, -Station_code) #check no NAs
 
 chem <- chem %>% 
-  full_join(
+  left_join(
     stations %>% 
       filter(Station_code %in% unified_site_list) %>% 
       select(Station_code, DEPTH_BELOW_THRESHOLD) %>%
