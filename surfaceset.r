@@ -3,6 +3,8 @@
 ## load packages
 library("vegan")
 library("cocorresp")
+library("ggfortify")
+library("ggbiplot")
 
 ## load data
 source("load.vincent.data.r")
@@ -16,14 +18,12 @@ ggplot(chem0, aes(x = Val)) +
   facet_wrap(~ Chemical_species, scales = "free_x")
 
 #PCA of chemistry
-chem.pca <- prcomp(chem, scale. = TRUE)
+chem.pca <- prcomp(select(chem, -Station_code), scale. = TRUE)
 
-
-x11()
-plot(chem.pca)
 screeplot(chem.pca, bstick=TRUE)
-biplot(chem.pca)
-autoplot(chem.pca)
+ggscreeplot(chem.pca)
+ggbiplot(chem.pca, labels = chem$Station_code) + 
+  lims(x = c(-2.5, NA), y = c(-2, NA)) + theme_bw()
 
 pairs(chem, col = ifelse(rownames(chem) == "GRO50", 2, 1), gap = 0)
 plot(chem$TOC, chem$X)
