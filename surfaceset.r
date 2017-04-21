@@ -24,21 +24,23 @@ chem.pca <- prcomp(select(chem, -Station_code), scale. = TRUE)
 screeplot(chem.pca, bstick=TRUE)
 ggscreeplot(chem.pca)
 ggbiplot(chem.pca, labels = chem$Station_code) + 
-  lims(x = c(-2.5, NA), y = c(-2, NA)) + theme_bw()
+  lims(x = c(-2.5, NA), y = c(-2, NA)) + 
+  theme_bw()
 
 #pairs plots of chemistry
 setNames(chem, make.names(names(chem))) %>% 
   ggpairs(columns = 2:ncol(chem))
 
 #pigments
-RDA <- rda(chem[, pig] ~ ., data = chem[, !pig], scale = TRUE)
-RDA0 <- rda(chem[, pig] ~ 1, data = chem[, !pig], scale = TRUE)
+pig <- names(chem) %in% pigments
+RDA <- rda(chem[, pig] ~ ., data = select(chem, -which(pig), -Station_code), scale = TRUE)
+RDA0 <- rda(chem[, pig] ~ 1, data = select(chem, -which(pig), -Station_code), scale = TRUE)
 plot(RDA0)
 ordisurf(RDA0, chem$O2, add = TRUE)
 
 plot(chem$O2, scores(RDA0, disp = "sites")[, 1])
 scatter.smooth(chem$O2, scores(RDA0, disp = "sites")[, 1])
-identify(chem$O2, scores(RDA0, disp = "sites")[, 1], rownames(chem))
+identify(chem$O2, scores(RDA0, disp = "sites")[, 1], chem$Station_code)
 
 RDA1 <- step(RDA0, reformulate(names(chem[, !pig])), test = "perm")
 RDA1
