@@ -6,6 +6,8 @@ library("cocorresp")
 library("ggfortify")
 library("ggbiplot")# install with devtools::install_github("richardjtelford/ggbiplot", ref = "experimental")
 library("GGally")
+library("ggvegan")
+library("ggrepel")
 
 ## load data
 source("load.vincent.data.r")
@@ -19,13 +21,27 @@ ggplot(chem0, aes(x = Val)) +
   facet_wrap(~ Chemical_species, scales = "free_x")
 
 #PCA of chemistry
-chem.pca <- prcomp(select(chem, -Station_code), scale. = TRUE)
-
+chem.pca <- rda(select(chem, -Station_code), scale = TRUE)
 screeplot(chem.pca, bstick=TRUE)
-ggscreeplot(chem.pca)
-ggbiplot(chem.pca, labels = chem$Station_code) + 
-  lims(x = c(-2.5, NA), y = c(-2, NA)) + 
-  theme_bw()
+
+f.pca <- fortify(chem.pca, scaling = "symmetric")
+f.pca.species <- f.pca %>% filter(Score == "species")
+f.pca.sites <- f.pca %>% filter(Score == "sites") %>% mutate(Label = chem$Station_code)
+
+ggplot(f.pca.sites, aes(x = Dim1, y = Dim2, label = Label)) + 
+  geom_point() +
+  geom_text_repel(size = 3.5) +
+  geom_axis(data = f.pca.species) +
+  coord_equal() +
+  scale_x_continuous(expand = c(0.1, 0.1), minor_breaks = .Machine$double.eps) + 
+  scale_y_continuous(expand = c(0.1, 0.1), minor_breaks = .Machine$double.eps) +
+  labs(x = "PC1", y = "PC2") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank())
+  
+
+autoplot(chem.pca, scaling = "symmetric", legend.position = "none")
+ 
 
 #pairs plots of chemistry
 setNames(chem, make.names(names(chem))) %>% 
