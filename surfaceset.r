@@ -25,13 +25,14 @@ chem.pca <- rda(select(chem, -Station_code), scale = TRUE)
 screeplot(chem.pca, bstick=TRUE)
 
 f.pca <- fortify(chem.pca, scaling = "symmetric")
-f.pca.species <- f.pca %>% filter(Score == "species")
+f.pca.species <- f.pca %>% filter(Score == "species") %>%
+  mutate(Label = recode(Label, "O2" = "O[2]", "%<63" = "SiltClay", "Depth Below Threshold" = "Depth~Below~Threshold"))
 f.pca.sites <- f.pca %>% filter(Score == "sites") %>% mutate(Label = chem$Station_code)
 
 ggplot(f.pca.sites, aes(x = Dim1, y = Dim2, label = Label)) + 
   geom_point() +
   geom_text_repel(size = 3.5) +
-  geom_axis(data = f.pca.species) +
+  geom_axis(data = f.pca.species, parse = TRUE) +
   coord_equal() +
   scale_x_continuous(expand = c(0.1, 0.1), minor_breaks = .Machine$double.eps) + 
   scale_y_continuous(expand = c(0.1, 0.1), minor_breaks = .Machine$double.eps) +
@@ -183,6 +184,8 @@ plot(stepacross(vegdist(macro8gf), toolong=.9),stepacross(vegdist(foram8m), tool
 mantel(stepacross(vegdist(macro8gf), toolong=.9),stepacross(vegdist(foram8m), toolong=.9))
 
 ## predictive CoCA using SIMPLS and formula interface
+
+
 coco.pred <- coca(macro8gf ~ ., data = as.data.frame(foram8m) )
 summary(coco.pred)
 plot(coco.pred)
