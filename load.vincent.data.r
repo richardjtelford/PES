@@ -4,6 +4,7 @@ library("tidyverse")
 library("entropy")
 library("lubridate")
 library("assertr")
+library("assertthat")
 
 #functions
 div <- function(x) {
@@ -18,6 +19,21 @@ cleanStationCodes <- function(codes){
   codes
 }
 
+#species processing functions
+sppProcess <- . %>%
+  summarise(count = sum(N)) %>%
+  spread(key = species, value = count, fill = 0)
+group_replicate <- . %>% 
+  group_by(Station_code, species, Replicate) %>% 
+  sppProcess()
+group_station <- . %>% 
+  group_by(Station_code, species) %>% 
+  sppProcess()
+group_station_minCount <- . %>% 
+  group_by(Station_code, species) %>% 
+  filter(n > minCount) %>% 
+  sppProcess()
+
 ### access data from database
 con <- src_sqlite("data/PES_DB_8Feb2011.sqlite", create = FALSE)
 
@@ -27,8 +43,10 @@ stations <- tbl(con, "PES_DB_stations") %>%
   collect() %>% 
   mutate(Station_code = cleanStationCodes(Station_code))
 
+
 ##macrofauna
 macro <- tbl(con, "PES_DB_macrofauna_at_forams_stations") %>%
+  rename(species = CodeMacrofauna, N = `Number*1`) %>% 
   collect() %>%
   mutate(DAT = ymd(DAT)) %>% 
   mutate(Station_code = cleanStationCodes(Station_code))
@@ -36,33 +54,25 @@ macro <- tbl(con, "PES_DB_macrofauna_at_forams_stations") %>%
 #replicate level
 macro3r <- macro %>% 
   filter(DAT < "2005-01-01") %>% 
-  select(-DAT, -SpeciesMacrofauna) %>%
-  spread(key = CodeMacrofauna, value = `Number*1`, fill = 0)
+  group_replicate() 
 
 RC  <- c("RC5", "RC9")# sites with multiple samples.
 macro8r <- macro %>% 
   filter(DAT > "2005-01-01") %>%
   filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) %>% #only September samples from RC5/9
-  select(-DAT, -SpeciesMacrofauna) %>% 
-  spread(key = CodeMacrofauna, value = `Number*1`, fill = 0)
+  group_replicate()
 
 #site level
 macro3g <- macro %>% 
-  filter(DAT < "2005-01-01") %>% 
-  group_by(Station_code, CodeMacrofauna) %>%
-  summarise(count = sum(`Number*1`)) %>%
-  spread(key = CodeMacrofauna, value = count, fill = 0)
+  filter(DAT < "2005-01-01")
 
 macro8g <- macro %>% 
   filter(DAT > "2005-01-01") %>% 
-  filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) %>% #only September samples from RC5/9
-  group_by(Station_code, CodeMacrofauna) %>%
-  summarise(count = sum(`Number*1`)) %>%
-  spread(key = CodeMacrofauna, value = count, fill = 0)
-
+  filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) #only September samples from RC5/9
 
 ##live forams
 forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where slice_numeric>0 and not Size  = '>500' and slice_numeric<3")) %>%
+  rename(species = SpeciesForam, N = `Number*1`) %>% 
   collect() %>%
   mutate(DAT = ymd(DAT)) %>% 
   mutate(Station_code = cleanStationCodes(Station_code))
@@ -70,35 +80,24 @@ forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where sli
 #replicate level
 foram3r <- forams %>% 
   filter(DAT < "2005-01-01") %>% 
-  group_by(Station_code, Replicate, SpeciesForam) %>% 
-  summarise(count = sum(`Number*1`)) %>%
-  spread(key = SpeciesForam, value = count, fill = 0)
+  group_replicate()
 
 foram8r <- forams %>% 
   filter(DAT > "2005-01-01") %>% 
   filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) %>% #only September samples from RC5/9
-  group_by(Station_code, Replicate, SpeciesForam) %>% 
-  summarise(count = sum(`Number*1`)) %>% # lump multiple depths
-  spread(key = SpeciesForam, value = count, fill = 0)
+  group_replicate()
 
 #site level
 foram3g <- forams %>% 
-  filter(DAT < "2005-01-01") %>%
-  group_by(Station_code, SpeciesForam) %>%
-  summarise(count = sum(`Number*1`)) %>%
-  spread(key = SpeciesForam, value = count, fill = 0)
+  filter(DAT < "2005-01-01") 
 
 foram8g <- forams %>% 
   filter(DAT > "2005-01-01") %>% 
-  filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) %>% #only September samples from RC5/9
-  group_by(Station_code, SpeciesForam) %>%
-  summarise(count = sum(`Number*1`)) %>%
-  spread(key = SpeciesForam, value = count, fill = 0)
-
+  filter((Station_code %in% RC & month(DAT) == 9) | !Station_code %in% RC) #only September samples from RC5/9
 
 ##dead forams
 dead <- tbl(con, "PES_DB_foraminifera_species_dead_data") %>%
-  rename(Number = `Number*1`) %>%
+  rename(N = `Number*1`) %>%
   collect() %>% 
   mutate(Station_code = cleanStationCodes(Station_code))
 
@@ -136,8 +135,8 @@ min0 <- function(x) {
 #unified site list
 allSites <- list(
   chem = unique(chem0$Station_code),
-  macro = macro8g$Station_code,
-  foram = foram8g$Station_code
+  macro = unique(macro8g$Station_code),
+  foram = unique(foram8g$Station_code)
 )
 unified_site_list <- Reduce(intersect, allSites) # sites with all variables # would miss abiotic sites
 
@@ -194,19 +193,27 @@ rm(O2)
 
 #Generate data sets with harmonised site lists f/m & f/m/c
 
-m83 <- macro8r %>% filter(Station_code %in% unified_site_list )
-m38 <- macro3r %>% filter(Station_code %in% unified_site_list )
+m83 <- macro8r %>% filter(Station_code %in% macro3r$Station_code)
+m38 <- macro3r %>% filter(Station_code %in% macro8r$Station_code)
 
-foram83<-foram8r %>% filter(Station_code %in% unified_site_list )
-foram38<-foram3r %>% filter(Station_code %in% unified_site_list )
+foram83<-foram8r %>% filter(Station_code %in% foram3r$Station_code) 
+foram38<-foram3r %>% filter(Station_code %in% foram8r$Station_code) 
 
-macro8gf<-macro8g %>% filter(Station_code %in% unified_site_list )
-foram8m<-foram8g %>% filter(Station_code %in% unified_site_list )
+macro8f<-macro8g %>% filter(Station_code %in% unified_site_list) %>% group_station()
+foram8m<-foram8g %>% filter(Station_code %in% unified_site_list) %>% group_station()
 
-#macro8gf <- decostand(macro8g[rownames(macro8g) %in% rownames(foram8), ], "total")
-#foram8m <-decostand(foram8[rownames(foram8) %in% rownames(macro8g), ], "total")
+assert_that(identical(rownames(macro8f), rownames(foram8m)))
+
+#subset with > 30 individuals
+minCount <- 30
+macro8f30<-macro8g %>% filter(Station_code %in% unified_site_list) %>% group_station_minCount()
+foram8m30<-foram8g %>% filter(Station_code %in% unified_site_list) %>% group_station_minCount()
 
 
 
-identical(rownames(macro8gf),rownames(foram8m))
+rowSums(macro8f30[, -1])
+assert_that(min(rowSums(foram8m[, -1])) > 50)
 
+
+#tidy up
+rm(group_station_minCount, group_station, group_replicate, cleanStationCodes)
