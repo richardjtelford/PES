@@ -1,4 +1,5 @@
 #load libraries
+library("magrittr")
 library("vegan")
 library("tidyverse")
 library("entropy")
@@ -30,8 +31,9 @@ group_station <- . %>%
   group_by(Station_code, species) %>% 
   sppProcess()
 group_station_minCount <- . %>% 
+  group_by(Station_code) %>% 
+  filter(n() > minCount) %>% 
   group_by(Station_code, species) %>% 
-  filter(n > minCount) %>% 
   sppProcess()
 
 ### access data from database
@@ -202,18 +204,16 @@ foram38<-foram3r %>% filter(Station_code %in% foram8r$Station_code)
 macro8f<-macro8g %>% filter(Station_code %in% unified_site_list) %>% group_station()
 foram8m<-foram8g %>% filter(Station_code %in% unified_site_list) %>% group_station()
 
-assert_that(identical(rownames(macro8f), rownames(foram8m)))
+assert_that(identical(macro8f$Station_code, foram8m$Station_code))
 
 #subset with > 30 individuals
 minCount <- 30
 macro8f30<-macro8g %>% filter(Station_code %in% unified_site_list) %>% group_station_minCount()
 foram8m30<-foram8g %>% filter(Station_code %in% unified_site_list) %>% group_station_minCount()
+foram8m30 %<>% filter(Station_code %in% macro8f30$Station_code)
+macro8f30 %<>% filter(Station_code %in% foram8m30$Station_code)
 
-
-
-rowSums(macro8f30[, -1])
-assert_that(min(rowSums(foram8m[, -1])) > 50)
-
+assert_that(identical(macro8f30$Station_code, foram8m30$Station_code))
 
 #tidy up
 rm(group_station_minCount, group_station, group_replicate, cleanStationCodes)
