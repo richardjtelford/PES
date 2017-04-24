@@ -34,8 +34,8 @@ ggplot(f.pca.sites, aes(x = Dim1, y = Dim2, label = Label)) +
   geom_text_repel(size = 3.5) +
   geom_axis(data = f.pca.species, parse = TRUE) +
   coord_equal() +
-  scale_x_continuous(expand = c(0.1, 0.1), minor_breaks = .Machine$double.eps) + 
-  scale_y_continuous(expand = c(0.1, 0.1), minor_breaks = .Machine$double.eps) +
+  scale_x_continuous(expand = c(0.3, 0.3), minor_breaks = .Machine$double.eps) + 
+  scale_y_continuous(expand = c(0.3, 0.3), minor_breaks = .Machine$double.eps) +
   labs(x = "PC1", y = "PC2") +
   theme_bw() +
   theme(panel.grid.major = element_blank())
