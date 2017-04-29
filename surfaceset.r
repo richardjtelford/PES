@@ -225,10 +225,21 @@ sco$species <- bind_rows(
   sco$species$Y %>% as_data_frame() %>% mutate(which = "response")
 ) 
 
-ggplot(sco$sites, aes(x = `Comp 1`, y = `Comp 2`)) + 
-  geom_point() +
-  facet_wrap(~ which) +
-  coord_equal()
+autoplot.coco <- function(x, which = c("response", "predictor")){
+  which <- match.arg(which)
+  WHICH <- ifelse(which == "response", "Y", "X")
+  sco <- scores(x)
+  sco <- lapply(sco, `[[`, WHICH)
+  
+  ggplot(sco$sites, aes(x = `Comp 1`, y = `Comp 2`)) + 
+    geom_point() +
+    geom_point(data = sco$species, colour = "red", shape = 2)+
+    coord_equal()
+}
+
+a <- autoplot.coco(coco.pred, which = "predictor") + ggtitle("Predictor - forams")
+b <- autoplot.coco(coco.pred, which = "response") + ggtitle("Response - macrofauna")
+gridExtra::grid.arrange(a, b, nrow = 1)
 
 
 plot(diversity(macro8gf),diversity(foram8m))
