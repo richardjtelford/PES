@@ -225,7 +225,7 @@ sco$species <- bind_rows(
   sco$species$Y %>% as_data_frame() %>% mutate(which = "response")
 ) 
 
-autoplot.coco <- function(x, which = c("response", "predictor")){
+autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw()){
   which <- match.arg(which)
   WHICH <- ifelse(which == "response", "Y", "X")
   sco <- scores(x)
@@ -234,7 +234,11 @@ autoplot.coco <- function(x, which = c("response", "predictor")){
   ggplot(sco$sites, aes(x = `Comp 1`, y = `Comp 2`)) + 
     geom_point() +
     geom_point(data = sco$species, colour = "red", shape = 2)+
-    coord_equal()
+    coord_equal() +
+    scale_x_continuous(minor_breaks = .Machine$double.eps * 10) +
+    scale_y_continuous(minor_breaks = .Machine$double.eps * 10) +
+    th +
+    theme(panel.grid.major = element_blank())
 }
 
 a <- autoplot.coco(coco.pred, which = "predictor") + ggtitle("Predictor - forams")
