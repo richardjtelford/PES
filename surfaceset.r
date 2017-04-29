@@ -238,7 +238,8 @@ autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw()
     scale_x_continuous(minor_breaks = .Machine$double.eps * 10) +
     scale_y_continuous(minor_breaks = .Machine$double.eps * 10) +
     th +
-    theme(panel.grid.major = element_blank())
+    theme(panel.grid.major = element_blank()) +
+    labs(x = "CoCA axis 1", y = "CoCA axis 2")
 }
 
 a <- autoplot.coco(coco.pred, which = "predictor") + ggtitle("Predictor - forams")
