@@ -175,6 +175,15 @@ plot(sort(colSums(foram8), dec=TRUE), log="y")
 x11();
 plot(sort(colSums(macro8), dec=TRUE), log="y")
 
+#procrustes analysis
+foram.cca <- cca(foram8m30 ~ 1)
+macro.cca <- cca(macro8f30 ~ 1)
+
+pt <- protest(foram.cca, macro.cca, permutations = 999)
+pt
+plot(pt)
+
+
  #co=correspondance
 
 plot(vegdist(macro8gf[rowSums(macro8gf)>10,]),vegdist(foram8m[rowSums(macro8gf)>10,]))
@@ -186,21 +195,40 @@ mantel(stepacross(vegdist(macro8gf), toolong=.9),stepacross(vegdist(foram8m), to
 ## predictive CoCA using SIMPLS and formula interface
 
 
-coco.pred <- coca(macro8gf ~ ., data = as.data.frame(foram8m) )
+coco.pred <- coca(macro8f30 ~ ., data = foram8m30)
 summary(coco.pred)
 plot(coco.pred)
 ## should retain only the useful PLS components for a parsimonious model
 ## Not run: 
 ## Leave-one-out crossvalidation - this takes a while
-crossval(macro8gf,  as.data.frame(foram8m) )
+crossval(macro8f30,  foram8m30)
 ## so 2 axes are sufficient
 ## permutation test to assess significant PLS components - takes a while
-bp.perm <- permutest.coca(coco.pred, permutations = 99)
+bp.perm <- permutest(coco.pred, permutations = 99)
 bp.perm
 summary(bp.perm)
 
-coco.pred <- coca(macro8gf ~ ., data = as.data.frame(foram8m) , n.axes = 2)
+coco.pred <- coca(macro8f30 ~ ., data = foram8m30 , n.axes = 2)
 coco.pred 
+
+par(mfrow = c(2, 1))
+plot(coco.pred, which = "predictor")
+plot(coco.pred, which = "response")
+
+sco <- scores(coco.pred)
+sco$sites <- bind_rows(
+  sco$sites$X %>% as_data_frame() %>% mutate(which = "predictor", site = Station_code30),
+  sco$sites$Y %>% as_data_frame() %>% mutate(which = "response", site = Station_code30)
+  ) 
+sco$species <- bind_rows(
+  sco$species$X %>% as_data_frame() %>% mutate(which = "predictor"),
+  sco$species$Y %>% as_data_frame() %>% mutate(which = "response")
+) 
+
+ggplot(sco$sites, aes(x = `Comp 1`, y = `Comp 2`)) + 
+  geom_point() +
+  facet_wrap(~ which) +
+  coord_equal()
 
 
 plot(diversity(macro8gf),diversity(foram8m))
