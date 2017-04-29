@@ -23,7 +23,8 @@ cleanStationCodes <- function(codes){
 #species processing functions
 sppProcess <- . %>%
   summarise(count = sum(N)) %>%
-  spread(key = species, value = count, fill = 0)
+  spread(key = species, value = count, fill = 0) %>% 
+  ungroup()
 group_replicate <- . %>% 
   group_by(Station_code, species, Replicate) %>% 
   sppProcess()
@@ -214,6 +215,15 @@ foram8m30 %<>% filter(Station_code %in% macro8f30$Station_code)
 macro8f30 %<>% filter(Station_code %in% foram8m30$Station_code)
 
 assert_that(identical(macro8f30$Station_code, foram8m30$Station_code))
+
+Station_code30 <- macro8f30$Station_code
+foram8m30 <- foram8m30 %>% select(-Station_code)
+foram8m30 <- foram8m30[, colSums(foram8m30 > 0) > 1]#remove single site spp
+foram8m30 <- log1p(foram8m30)
+
+macro8f30 <- macro8f30 %>% select(-Station_code)
+macro8f30 <- macro8f30[, colSums(macro8f30 > 0) > 1]#remove single site spp
+macro8f30 <- log1p(macro8f30)
 
 #tidy up
 rm(group_station_minCount, group_station, group_replicate, cleanStationCodes)
