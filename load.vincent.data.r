@@ -225,5 +225,9 @@ macro8f30 <- macro8f30 %>% select(-Station_code)
 macro8f30 <- macro8f30[, colSums(macro8f30 > 0) > 1]#remove single site spp
 macro8f30 <- log1p(macro8f30)
 
+chem30 <- chem %>% filter(Station_code %in% Station_code30) %>% 
+  verify(Station_code == Station_code30) %>% 
+  select(-Station_code)
+
 #tidy up
 rm(group_station_minCount, group_station, group_replicate, cleanStationCodes)
