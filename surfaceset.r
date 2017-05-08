@@ -194,22 +194,33 @@ mantel(stepacross(vegdist(macro8gf), toolong=.9),stepacross(vegdist(foram8m), to
 
 ## predictive CoCA using SIMPLS and formula interface
 
-
 coco.pred <- coca(macro8f30 ~ ., data = foram8m30)
-summary(coco.pred)
+coco.pred
 plot(coco.pred)
 ## should retain only the useful PLS components for a parsimonious model
-## Not run: 
+
 ## Leave-one-out crossvalidation - this takes a while
-crossval(macro8f30,  foram8m30)
+cv <- crossval(macro8f30,  foram8m30)
+data_frame(cv = cv$CVfit, x = 1:length(cv)) %>% 
+  ggplot(aes(x = x, y = cv)) +
+    geom_point() +
+    labs(x = "Number of axes", y = "Cross-validatory %fit")
 ## so 2 axes are sufficient
 ## permutation test to assess significant PLS components - takes a while
-bp.perm <- permutest(coco.pred, permutations = 99)
+bp.perm <- permutest(coco.pred, permutations = 999, n.axes = 5)
 bp.perm
+as_data_frame(unclass(bp.perm)[1:7]) %>% 
+  mutate(x = 1:n()) %>%
+  ggplot(aes(x = x, y = pcent.fit, colour = pval < 0.05 )) + 
+  geom_point()
+
 summary(bp.perm)
 
 coco.pred <- coca(macro8f30 ~ ., data = foram8m30 , n.axes = 2)
 coco.pred 
+
+#envfit
+envfit(coco.pred, env = select(chem, O2, TN, TOC))
 
 par(mfrow = c(2, 1))
 plot(coco.pred, which = "predictor")
@@ -225,6 +236,7 @@ sco$species <- bind_rows(
   sco$species$Y %>% as_data_frame() %>% mutate(which = "response")
 ) 
 
+#plot function for coco-predict
 autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw()){
   which <- match.arg(which)
   WHICH <- ifelse(which == "response", "Y", "X")
