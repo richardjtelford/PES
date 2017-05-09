@@ -220,11 +220,15 @@ coco.pred <- coca(macro8f30 ~ ., data = foram8m30 , n.axes = 2)
 coco.pred 
 
 #envfit
-envfit(coco.pred, env = select(chem, O2, TN, TOC))
+sol.pred <- envfit(coco.pred, env = select(chem30, O2, TN, TOC), which = "predictor")
+sol.resp <- envfit(coco.pred, env = select(chem30, O2, TN, TOC), which = "response")
 
-par(mfrow = c(2, 1))
+
+par(mfrow = c(1, 2))
 plot(coco.pred, which = "predictor")
+plot(sol.pred)
 plot(coco.pred, which = "response")
+plot(sol.resp)
 
 sco <- scores(coco.pred)
 sco$sites <- bind_rows(
@@ -237,13 +241,13 @@ sco$species <- bind_rows(
 ) 
 
 #plot function for coco-predict
-autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw()){
+autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw(), envfit = NULL){
   which <- match.arg(which)
   WHICH <- ifelse(which == "response", "Y", "X")
   sco <- scores(x)
   sco <- lapply(sco, `[[`, WHICH)
   
-  ggplot(sco$sites, aes(x = `Comp 1`, y = `Comp 2`)) + 
+  g <- ggplot(sco$sites, aes(x = `Comp 1`, y = `Comp 2`)) + 
     geom_point() +
     geom_point(data = sco$species, colour = "red", shape = 2)+
     coord_equal() +
@@ -252,10 +256,17 @@ autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw()
     th +
     theme(panel.grid.major = element_blank()) +
     labs(x = "CoCA axis 1", y = "CoCA axis 2")
+  
+  if(!is.null(envfit)){
+    envfit <- fortify(envfit)
+    g <- g +  geom_axis(data = envfit, mapping = aes(x = Comp.1, y = Comp.2, label = labs), parse = TRUE)
+  }
+  
+  g
 }
 
-a <- autoplot.coco(coco.pred, which = "predictor") + ggtitle("Predictor - forams")
-b <- autoplot.coco(coco.pred, which = "response") + ggtitle("Response - macrofauna")
+a <- autoplot.coco(coco.pred, which = "predictor", envfit = sol.pred) + ggtitle("Predictor - forams")
+b <- autoplot.coco(coco.pred, which = "response", envfit = sol.resp) + ggtitle("Response - macrofauna")
 gridExtra::grid.arrange(a, b, nrow = 1)
 
 
