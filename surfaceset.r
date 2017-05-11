@@ -41,7 +41,7 @@ ggplot(f.pca.sites, aes(x = Dim1, y = Dim2, label = Label)) +
   theme(panel.grid.major = element_blank())
   
 
-autoplot(chem.pca, scaling = "symmetric", legend.position = "none")
+#autoplot(chem.pca, scaling = "symmetric", legend.position = "none")
  
 
 #pairs plots of chemistry
