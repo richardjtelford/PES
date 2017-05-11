@@ -1,4 +1,4 @@
-fortify.envfit <- function (x, choices = c(1, 2), labels, arrow.mul, at = c(0, 0), axis = FALSE, p.max = NULL, col = "blue", bg, add = TRUE, ...) 
+fortify.envfit <- function (x, choices = c(1, 2), labels, at = c(0, 0), axis = FALSE, p.max = NULL, ...) 
 {
   formals(arrows) <- c(formals(arrows), alist(... = ))
   labs <- list(v = rownames(x$vectors$arrows), f = rownames(x$factors$centroids))
@@ -39,14 +39,9 @@ fortify.envfit <- function (x, choices = c(1, 2), labels, arrow.mul, at = c(0, 0
   }
   if (!is.null(x$vectors)) {
     vect <- sqrt(x$vectors$r) * x$vectors$arrows[, choices, drop = FALSE]
-    if (missing(arrow.mul)) {
-      if (!add) 
-        arrow.mul <- 1
-      else arrow.mul <- ordiArrowMul(vect, at = at)
-    }
     if (axis) {
       maxarr <- round(sqrt(max(x$vectors$r)), 1)
-      ax <- -c(-1, 0, 1) * arrow.mul * maxarr
+      ax <- -c(-1, 0, 1) * maxarr
     }
     vect <- arrow.mul * vect
     vect <- sweep(vect, 2, at, "+")
