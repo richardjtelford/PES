@@ -43,7 +43,6 @@ fortify.envfit <- function (x, choices = c(1, 2), labels, at = c(0, 0), axis = F
       maxarr <- round(sqrt(max(x$vectors$r)), 1)
       ax <- -c(-1, 0, 1) * maxarr
     }
-    vect <- arrow.mul * vect
     vect <- sweep(vect, 2, at, "+")
   }
   data.frame(vect, labs = labs$v)
