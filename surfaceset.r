@@ -12,7 +12,8 @@ library("ggrepel")
 ## load data
 source("load.vincent.data.r")
 
-
+#load functions
+source("fortify.envfit.R")
 
 
 #histogram of chemistry
@@ -230,15 +231,15 @@ plot(sol.pred)
 plot(coco.pred, which = "response")
 plot(sol.resp)
 
-sco <- scores(coco.pred)
-sco$sites <- bind_rows(
-  sco$sites$X %>% as_data_frame() %>% mutate(which = "predictor", site = Station_code30),
-  sco$sites$Y %>% as_data_frame() %>% mutate(which = "response", site = Station_code30)
-  ) 
-sco$species <- bind_rows(
-  sco$species$X %>% as_data_frame() %>% mutate(which = "predictor"),
-  sco$species$Y %>% as_data_frame() %>% mutate(which = "response")
-) 
+# sco <- scores(coco.pred)
+# sco$sites <- bind_rows(
+#   sco$sites$X %>% as_data_frame() %>% mutate(which = "predictor", site = Station_code30),
+#   sco$sites$Y %>% as_data_frame() %>% mutate(which = "response", site = Station_code30)
+#   ) 
+# sco$species <- bind_rows(
+#   sco$species$X %>% as_data_frame() %>% mutate(which = "predictor"),
+#   sco$species$Y %>% as_data_frame() %>% mutate(which = "response")
+# ) 
 
 #plot function for coco-predict
 autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw(), envfit = NULL){
@@ -256,10 +257,19 @@ autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw()
     th +
     theme(panel.grid.major = element_blank()) +
     labs(x = "CoCA axis 1", y = "CoCA axis 2")
-  
+
   if(!is.null(envfit)){
     envfit <- fortify(envfit)
-    g <- g +  geom_axis(data = envfit, mapping = aes(x = Comp.1, y = Comp.2, label = labs), parse = TRUE)
+
+    #arrow.mul
+    fill = 0.75 
+    u <- c(range(c(sco$sites[,'Comp 1'], sco$species[,'Comp 1'])), range(c(sco$sites[,'Comp 2'], sco$species[,'Comp 2'])))
+    r <- c(range(envfit[, 1], na.rm = TRUE), range(envfit[, 2], na.rm = TRUE))
+    u <- u/r
+    u <- u[is.finite(u) & u > 0]
+    arrow.mul <- fill * min(u)
+
+    g <- g +  geom_axis(data = envfit, mapping = aes(x = Comp.1 * arrow.mul, y = Comp.2 * arrow.mul, label = labs), parse = TRUE)
   }
   
   g
