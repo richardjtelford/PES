@@ -4,7 +4,8 @@
 library("vegan")
 library("cocorresp")
 library("ggfortify")
-library("ggbiplot")# install with devtools::install_github("richardjtelford/ggbiplot", ref = "experimental")
+devtools::install_github("richardjtelford/ggbiplot", ref = "experimental")#check latest version of ggbiplot
+library("ggbiplot")
 library("GGally")
 library("ggvegan")
 library("ggrepel")
@@ -27,8 +28,11 @@ screeplot(chem.pca, bstick=TRUE)
 
 f.pca <- fortify(chem.pca, scaling = "symmetric")
 f.pca.species <- f.pca %>% filter(Score == "species") %>%
-  mutate(Label = recode(Label, "O2" = "O[2]", "%<63" = "SiltClay", "Depth Below Threshold" = "Depth~Below~Threshold"))
+  mutate(Label = recode(Label, "O2" = "O[2]", "%<63" = "'%'~'<'~63~mu*m", "Depth Below Threshold" = "Depth~Below~Threshold"))
 f.pca.sites <- f.pca %>% filter(Score == "sites") %>% mutate(Label = chem$Station_code)
+
+propVar <- eigenvals(chem.pca) / sum(eigenvals(chem.pca)) * 100
+propVar <- format(propVar, digits = 1)
 
 ggplot(f.pca.sites, aes(x = Dim1, y = Dim2, label = Label)) + 
   geom_point() +
@@ -37,11 +41,11 @@ ggplot(f.pca.sites, aes(x = Dim1, y = Dim2, label = Label)) +
   coord_equal() +
   scale_x_continuous(expand = c(0.3, 0.3), minor_breaks = .Machine$double.eps) + 
   scale_y_continuous(expand = c(0.3, 0.3), minor_breaks = .Machine$double.eps) +
-  labs(x = "PC1", y = "PC2") +
+  labs(x = paste0("PC1 (",propVar[1],"%)"), y = paste0("PC2 (",propVar[2],"%)")) +
   theme_bw() +
   theme(panel.grid.major = element_blank())
   
-
+ggsave("Chemistry_PCA.eps", width = 90, height = 90, units = "mm")#save plot
 #autoplot(chem.pca, scaling = "symmetric", legend.position = "none")
  
 
