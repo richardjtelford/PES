@@ -23,13 +23,15 @@ ggplot(chem0, aes(x = Val)) +
   facet_wrap(~ Chemical_species, scales = "free_x")
 
 #PCA of chemistry
-chem.pca <- rda(select(chem, -Station_code), scale = TRUE)
+chem.pca <- rda(select(chem_complete, -Station_code), scale = TRUE)
 screeplot(chem.pca, bstick=TRUE)
 
 f.pca <- fortify(chem.pca, scaling = "symmetric")
 f.pca.species <- f.pca %>% filter(Score == "species") %>%
   mutate(Label = recode(Label, "O2" = "O[2]", "%<63" = "'%'~'<'~63~mu*m", "Depth Below Threshold" = "Depth~Below~Threshold"))
-f.pca.sites <- f.pca %>% filter(Score == "sites") %>% mutate(Label = chem$Station_code)
+f.pca.sites <- f.pca %>% 
+  filter(Score == "sites") %>% 
+  mutate(Label = chem_complete$Station_code)
 
 propVar <- eigenvals(chem.pca) / sum(eigenvals(chem.pca)) * 100
 propVar <- format(propVar, digits = 1)

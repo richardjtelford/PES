@@ -125,7 +125,7 @@ chem0 <- tbl(con, "PES_db_chemistry_data_flat") %>%
   ungroup() %>% 
   mutate(Station_code = cleanStationCodes(Station_code)) %>%
   group_by(Station_code, Chemical_species) %>% 
-  filter(!Station_code %in% c("HV16", "KV01", "KRG")) # remove unwanted chemistry stations
+  filter(!Station_code %in% c("HV16", "KV01")) # remove unwanted chemistry stations
 
 
 
@@ -174,8 +174,7 @@ chem0 <- chem0 %>%
 chem <- spread(chem0, key = Chemical_species, value = Val) %>% 
   mutate(ppna = `pheo-phytin a` + `chl a total (a+allom)`) %>%
   select(-`pheo-phytin a`, -`chl a total (a+allom)`) %>% 
-  select(Station_code, `%<63`, `allo-xanthin`,`beta-carotene`,`diato-xanthin`,lutein, O2, TN, TOC,`zea-xanthin`, ppna) %>% #"Cd","Cu""Pb","Zn"
-  assert(not_na, -Station_code) #check no NAs
+  select(Station_code, `%<63`, `allo-xanthin`,`beta-carotene`,`diato-xanthin`,lutein, O2, TN, TOC,`zea-xanthin`, ppna)#"Cd","Cu""Pb","Zn"
 
 chem <- chem %>% 
   left_join(
@@ -183,13 +182,16 @@ chem <- chem %>%
       filter(Station_code %in% unified_site_list) %>% 
       select(Station_code, DEPTH_BELOW_THRESHOLD) %>%
       rename(`Depth Below Threshold` = DEPTH_BELOW_THRESHOLD)
-  ) %>% 
-  assert(not_na, -Station_code)
+  ) 
 
 pigments <- c(pigments, "ppna")
 chem[names(chem) %in% pigments] <- sapply(chem[names(chem) %in% pigments], function(x){
     log(x + min0(x)/2) #log(x + k) where k is half minimum value
   })
+
+chem_complete <- chem %>% 
+  filter(Station_code != "KRG") %>% #no pigment data
+  assert(not_na, -Station_code)
 
 #tidyup
 rm(O2)
