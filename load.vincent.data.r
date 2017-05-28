@@ -174,14 +174,15 @@ chem0 <- chem0 %>%
 chem <- spread(chem0, key = Chemical_species, value = Val) %>% 
   mutate(ppna = `pheo-phytin a` + `chl a total (a+allom)`) %>%
   select(-`pheo-phytin a`, -`chl a total (a+allom)`) %>% 
-  select(Station_code, `%<63`, `allo-xanthin`,`beta-carotene`,`diato-xanthin`,lutein, O2, TN, TOC,`zea-xanthin`, ppna)#"Cd","Cu""Pb","Zn"
-
+  select(Station_code, `%<63`, `allo-xanthin`,`beta-carotene`,`diato-xanthin`,lutein, O2, TN, TOC,`zea-xanthin`, ppna) %>% #"Cd","Cu""Pb","Zn"
+  rename(pc_lt_63 = `%<63`)
+  
 chem <- chem %>% 
   left_join(
     stations %>% 
       filter(Station_code %in% unified_site_list) %>% 
       select(Station_code, DEPTH_BELOW_THRESHOLD) %>%
-      rename(`Depth Below Threshold` = DEPTH_BELOW_THRESHOLD)
+      rename(DBT = DEPTH_BELOW_THRESHOLD)
   ) 
 
 pigments <- c(pigments, "ppna")

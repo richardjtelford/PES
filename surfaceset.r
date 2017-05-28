@@ -28,7 +28,7 @@ screeplot(chem.pca, bstick=TRUE)
 
 f.pca <- fortify(chem.pca, scaling = "symmetric")
 f.pca.species <- f.pca %>% filter(Score == "species") %>%
-  mutate(Label = recode(Label, "O2" = "O[2]", "%<63" = "'%'~'<'~63~mu*m", "Depth Below Threshold" = "Depth~Below~Threshold"))
+  mutate(Label = recode(Label, "O2" = "O[2]", "pc_lt_63" = "'%'~'<'~63~mu*m", "DBT" = "Depth~Below~Threshold"))
 f.pca.sites <- f.pca %>% 
   filter(Score == "sites") %>% 
   mutate(Label = chem_complete$Station_code)
@@ -66,13 +66,14 @@ plot(chem_complete$O2, scores(RDA0, disp = "sites")[, 1])
 scatter.smooth(chem_complete$O2, scores(RDA0, disp = "sites")[, 1])
 identify(chem_complete$O2, scores(RDA0, disp = "sites")[, 1], chem_complete$Station_code)
 
-RDA1 <- step(RDA0, reformulate(names(chem_complete[, !pig])), test = "perm")
+RDA1 <- ordistep(RDA0, reformulate(names(chem_complete[, !pig][,-1])), permutations = how(nperm = 999))
 RDA1
 plot(RDA1)
+anova(RDA1, by = "margin")
 RDAo <- rda(chem_complete[, pig] ~ O2, data = chem_complete[, !pig], scale = TRUE)
 RDAo
 plot(RDAo)
-RDAoc <- rda(chem[, pig] ~ O2 + TOC, data = chem_complete[, !pig], scale = TRUE)
+RDAoc <- rda(chem_complete[, pig] ~ O2 + TN, data = chem_complete[, !pig], scale = TRUE)
 RDAoc
 
 #macros
