@@ -56,23 +56,23 @@ setNames(chem, make.names(names(chem))) %>%
   ggpairs(columns = 2:ncol(chem))
 
 #pigments
-pig <- names(chem) %in% pigments
-RDA <- rda(chem[, pig] ~ ., data = select(chem, -which(pig), -Station_code), scale = TRUE)
-RDA0 <- rda(chem[, pig] ~ 1, data = select(chem, -which(pig), -Station_code), scale = TRUE)
+pig <- names(chem_complete) %in% pigments
+RDA <- rda(chem_complete[, pig] ~ ., data = select(chem_complete, -which(pig), -Station_code), scale = TRUE)
+RDA0 <- rda(chem_complete[, pig] ~ 1, data = select(chem_complete, -which(pig), -Station_code), scale = TRUE)
 plot(RDA0)
-ordisurf(RDA0, chem$O2, add = TRUE)
+ordisurf(RDA0, chem_complete$O2, add = TRUE)
 
-plot(chem$O2, scores(RDA0, disp = "sites")[, 1])
-scatter.smooth(chem$O2, scores(RDA0, disp = "sites")[, 1])
-identify(chem$O2, scores(RDA0, disp = "sites")[, 1], chem$Station_code)
+plot(chem_complete$O2, scores(RDA0, disp = "sites")[, 1])
+scatter.smooth(chem_complete$O2, scores(RDA0, disp = "sites")[, 1])
+identify(chem_complete$O2, scores(RDA0, disp = "sites")[, 1], chem_complete$Station_code)
 
-RDA1 <- step(RDA0, reformulate(names(chem[, !pig])), test = "perm")
+RDA1 <- step(RDA0, reformulate(names(chem_complete[, !pig])), test = "perm")
 RDA1
 plot(RDA1)
-RDAo <- rda(chem[, pig] ~ O2, data = chem[, !pig], scale = TRUE)
+RDAo <- rda(chem_complete[, pig] ~ O2, data = chem_complete[, !pig], scale = TRUE)
 RDAo
 plot(RDAo)
-RDAoc <- rda(chem[, pig] ~ O2 + TOC, data = chem[, !pig], scale = TRUE)
+RDAoc <- rda(chem[, pig] ~ O2 + TOC, data = chem_complete[, !pig], scale = TRUE)
 RDAoc
 
 #macros
