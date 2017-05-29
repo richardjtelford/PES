@@ -66,7 +66,7 @@ plot(chem_complete$O2, scores(RDA0, disp = "sites")[, 1])
 scatter.smooth(chem_complete$O2, scores(RDA0, disp = "sites")[, 1])
 identify(chem_complete$O2, scores(RDA0, disp = "sites")[, 1], chem_complete$Station_code)
 
-RDA1 <- ordistep(RDA0, reformulate(names(chem_complete[, !pig][,-1])), permutations = how(nperm = 999))
+RDA1 <- ordistep(RDA0, reformulate(names(select(chem_complete, -which(pig), -Station_code))), permutations = how(nperm = 999))
 RDA1
 plot(RDA1)
 anova(RDA1, by = "margin")
@@ -79,29 +79,30 @@ RDAoc
 #macros
 decorana(macro8f30)#long gradient
 
-macro.cca.mod<-(cca(log(macro8[,colSums(macro8>0)>1]+1)))
-screeplot(macro.cca.mod, bstick=T)
-
-macro.cca.mod<-(cca(sqrt(decostand(macro8g[rowSums(macro8g)>5,colSums(macro8g>0)>2], "total"))))
-screeplot(macro.cca.mod, bstick=T)
-plot(macro.cca.mod)
-plot(scores(macro.cca.mod, disp="sites")[,1],rowSums(macro8g[rowSums(macro8g)>5,colSums(macro8g>0)>2]))
+macro.ca <- cca(macro8f30 ~ 1, data = select(chem30, -one_of(pigments)))
+screeplot(macro.ca, bstick = TRUE)
+plot(macro.ca)
 
 
-foram.cca.mod<-(cca(sqrt(decostand(foram, "total"))))
-screeplot(foram.cca.mod, bstick=T)
 
-macro8g<-macro8g[rowSums(macro8g)>0,]
-macro8gc<-macro8g[rownames(macro8g)%in%rownames(chem),]
-chemM<-chem[rownames(chem)%in%rownames(macro8g),]
-identical(rownames(macro8gc), rownames(chemM))
+decorana(foram8m30)#shortish gradient
 
-mod<-step(cca(log(macro8gc[,colSums(macro8gc>0)>1]+1)~1, data=chemM), reformulate(names(chemM)), test="perm")
-mod
-x11()
-plot(mod)
+foram.ca <- cca(foram8m30 ~ 1, data = select(chem30, -one_of(pigments)))
+screeplot(foram.ca, bstick = TRUE)
+plot(foram.ca)
 
-cor(diversity(macro8gc),chemM$O2)
+
+macro.mod <- ordistep(macro.ca, reformulate(names(select(chem30, -one_of(pigments)))))
+macro.mod
+
+plot(macro.mod)
+
+
+foram.mod <- ordistep(foram.ca, reformulate(names(select(chem30, -one_of(pigments)))))
+foram.mod
+
+plot(foram.mod)
+
 
 
 ##########
@@ -134,20 +135,6 @@ text(rowSums(foram38),rowSums( foram83), labels=rownames(foram83))
 
 x11()
 plot(seq(10,rowSums(foram8)[1]/8,10),sapply(seq(10,rowSums(foram8)[1]/8,10),function(n)rarefy(foram8[1,,drop=FALSE]/8,n)))
-
-
-mod<-cca(log(foram8[rowSums(foram8)>0,colSums(foram8>0)>1]+1))
-screeplot(mod, bstick=TRUE)
-plot(mod)
-chemf<-chem[rownames(chem)%in%rownames(foram8),]
-foram8c<-foram8[rownames(foram8)%in%rownames(chem),]
-identical(rownames(foram8c), rownames(chemf))
-
-cor(diversity(foram8c),chemf$O2)
-
-modf<-step(cca(log(foram8c[,colSums(foram8c>0)>1]+1)~1, data=chemf), reformulate(names(chemf)), test="perm")
-modf
-plot(modf)
 
 
 #procrustes analysis
