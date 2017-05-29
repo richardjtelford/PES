@@ -192,14 +192,19 @@ pt
 plot(pt)
 
 
- #co=correspondance
+#Mantel tests
+dist_macro <- vegdist(macro8f30)
+dist_foram <- vegdist(foram8m30)
+ggplot(data_frame(macro = as.vector(dist_macro), 
+                  foram = as.vector(dist_foram)), 
+       aes(x = macro, y = foram)) +
+  geom_point() +
+  geom_smooth()
 
-plot(vegdist(macro8gf[rowSums(macro8gf)>10,]),vegdist(foram8m[rowSums(macro8gf)>10,]))
-mantel(vegdist(macro8gf),vegdist(foram8m))
+mantel(dist_macro, dist_foram)
 
-plot(stepacross(vegdist(macro8gf), toolong=.9),stepacross(vegdist(foram8m), toolong=.9))
-mantel(stepacross(vegdist(macro8gf), toolong=.9),stepacross(vegdist(foram8m), toolong=.9))
 
+#co=correspondance
 ## predictive CoCA using SIMPLS and formula interface
 
 coco.pred <- coca(macro8f30 ~ ., data = foram8m30)
