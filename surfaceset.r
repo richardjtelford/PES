@@ -173,12 +173,6 @@ modf
 plot(modf)
 
 
-
-
-
-plot(vegdist(macro8gf[rowSums(macro8gf)>10,]),vegdist(foram8m[rowSums(macro8gf)>10,]))
-mantel(vegdist(macro8gf),vegdist(foram8m))
-
 plot(sort(colSums(foram8), dec=TRUE), log="y")
 x11();
 plot(sort(colSums(macro8), dec=TRUE), log="y")
