@@ -77,29 +77,8 @@ RDAoc <- rda(chem_complete[, pig] ~ O2 + TN, data = chem_complete[, !pig], scale
 RDAoc
 
 #macros
+decorana(macro8f30)#long gradient
 
-x11();
-boxplot(cbind(rowSums(m38),rowSums(m83)))#did the volume sampled remain constant?  --YES, Knockout in 2008
-boxplot(cbind(rowSums(m38>0),rowSums(m83>0)))#species
-x11();
-plot(cbind(rowSums(m38),rowSums(m83)), xlab="2003 no ind", ylab="2008 no ind")#species
-abline(0,1)
-identify(cbind(rowSums(m38),rowSums(m83)), labels=rownames(m83))
-x11();
-plot(cbind(rowSums(m38>0),rowSums(m83>0)), xlab="2003 no spp", ylab="2008 no spp")#species
-abline(0,1)
-identify(cbind(rowSums(m38>0),rowSums(m83>0)), labels=rownames(m83))
-
-
-plot(sort(rowSums(macro8), decreasing=TRUE), log="y")
-x11()
-plot(log(colSums(macro8g>0)),log(apply(macro8g,2,function(b)mean(b[b>0]))))#range abundance
-abline(lm(log(apply(macro8g,2,function(b)mean(b[b>0])))~log(colSums(macro8g>0))))#range abundance
-cor.test(log(colSums(macro8g>0)),log(apply(macro8g,2,function(b)mean(b[b>0]))))
-      
-
-decorana(log(macro8[,colSums(macro8>0)>2]+1))
-                                           
 macro.cca.mod<-(cca(log(macro8[,colSums(macro8>0)>1]+1)))
 screeplot(macro.cca.mod, bstick=T)
 
@@ -127,8 +106,6 @@ cor(diversity(macro8gc),chemM$O2)
 
 ##########
 #forams
-quantile(rowSums(foram8r))
-quantile(rowSums(macro8r))
 div.f<-tapply(diversity(foram8r),unlist(strsplit(rownames(foram8r),":"))[c(T,F)],sd)
 div.m<-tapply(diversity(macro8r),unlist(strsplit(rownames(macro8r),":"))[c(T,F)],function(x)sd(x[1:min(3,length(x))]))
 div.m <- div.m[names(div.m) %in% names(div.f)]
@@ -172,10 +149,6 @@ modf<-step(cca(log(foram8c[,colSums(foram8c>0)>1]+1)~1, data=chemf), reformulate
 modf
 plot(modf)
 
-
-plot(sort(colSums(foram8), dec=TRUE), log="y")
-x11();
-plot(sort(colSums(macro8), dec=TRUE), log="y")
 
 #procrustes analysis
 foram.cca <- cca(foram8m30 ~ 1)
@@ -236,16 +209,6 @@ plot(coco.pred, which = "predictor")
 plot(sol.pred)
 plot(coco.pred, which = "response")
 plot(sol.resp)
-
-# sco <- scores(coco.pred)
-# sco$sites <- bind_rows(
-#   sco$sites$X %>% as_data_frame() %>% mutate(which = "predictor", site = Station_code30),
-#   sco$sites$Y %>% as_data_frame() %>% mutate(which = "response", site = Station_code30)
-#   ) 
-# sco$species <- bind_rows(
-#   sco$species$X %>% as_data_frame() %>% mutate(which = "predictor"),
-#   sco$species$Y %>% as_data_frame() %>% mutate(which = "response")
-# ) 
 
 #plot function for coco-predict
 autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw(), envfit = NULL){
