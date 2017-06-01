@@ -77,21 +77,53 @@ RDAoc <- rda(chem_complete[, pig] ~ O2 + TN, data = chem_complete[, !pig], scale
 RDAoc
 
 #macros
+fortify_CCA <- function(x){
+  x <- fortify(x, scaling = "symmetric")
+  species <- x %>% filter(Score == "species")
+  sites <- x %>% 
+    filter(Score == "sites") %>% 
+    mutate(Label = Station_code30)
+  list(sites = sites, species = species)
+}
+
+plot.CCA <- function(x, xlab = "CA1", ylab = "CA2", exp = 0.2){
+  ggplot(x$sites, aes(x = Dim1, y = Dim2, label = Label)) + 
+    geom_point() +
+    geom_text_repel(size = 3.5) +
+    geom_point(data = x$species, shape = 3, colour = "red") +
+    coord_equal() +
+    scale_x_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps) + 
+    scale_y_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps) +
+    labs(x = xlab, y = ylab) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank())
+}
+
 ggpairs(select(chem30, -one_of(pigments)))
 
+
+#unconstrained macro
 decorana(macro8f30)#long gradient
 
 macro.ca <- cca(macro8f30 ~ 1, data = select(chem30, -one_of(pigments)))
 screeplot(macro.ca, bstick = TRUE)
 plot(macro.ca)
 
+fmacro <- fortify_CCA(macro.ca)
+plot.CCA(fmacro)
 
+#unconstrained forams
+ftaxa <- c("Cassidulina laevigata", "Liebusella. goësi", "Micrometula. hyalostriata", "Phainogulmia. aurata", "Textularia. earlandi" and "Recurvoides. trochamminiforme", "Bulimina marginata", "Cribrostomoides. bertheloti", "Cylindrogulmia. alba", "Leptohalysis. scottii" and "Spiroplectamina. biformis", "Stainforthia fusiformis", "Fissurina. sp.", "Bolivina. pseudopunctata") 
 
 decorana(foram8m30)#shortish gradient
 
 foram.ca <- cca(foram8m30 ~ 1, data = select(chem30, -one_of(pigments)))
 screeplot(foram.ca, bstick = TRUE)
 plot(foram.ca)
+
+fforam <- fortify_CCA(foram.ca)
+plot.CCA(fforam)
+
 
 
 macro.mod <- ordistep(macro.ca, reformulate(names(select(chem30, -one_of(pigments)))))
