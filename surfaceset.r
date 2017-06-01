@@ -88,7 +88,10 @@ fortify_CCA <- function(x, label.taxa){
   sites <- x %>% 
     filter(Score == "sites") %>% 
     mutate(Label = Station_code30)
-  list(sites = sites, species = species)
+  biplot <- x %>% 
+    filter(Score == "biplot") 
+  
+  list(sites = sites, species = species, biplot = biplot)
 }
 
 plot.CCA <- function(x, xlab = "CA1", ylab = "CA2", exp = 0.2){
@@ -97,9 +100,10 @@ plot.CCA <- function(x, xlab = "CA1", ylab = "CA2", exp = 0.2){
     geom_point(data = x$species, shape = 3, colour = "red") +
     geom_text_repel(size = 3.5) +
     geom_text_repel(size = 3.5, data = x$species, colour = "red") +
+    geom_axis(data = x$biplot) +
     coord_equal() +
-    scale_x_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps) + 
-    scale_y_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps) +
+    scale_x_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps * 10) + 
+    scale_y_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps * 10) +
     labs(x = xlab, y = ylab) +
     theme_bw() +
     theme(panel.grid.major = element_blank())
@@ -137,18 +141,23 @@ fforam <- fortify_CCA(foram.ca, label.taxa = ftaxa)
 plot.CCA(fforam)
 
 
-
+#constrained macros
 macro.mod <- ordistep(macro.ca, reformulate(names(select(chem30, -one_of(pigments)))))
 macro.mod
 
 plot(macro.mod)
+cmacro <- fortify_CCA(macro.mod, label.taxa = mtaxa2)
+plot.CCA(cmacro, xlab = "CCA1", ylab = "CCA2")
 
 
+#constrained forams
 foram.mod <- ordistep(foram.ca, reformulate(names(select(chem30, -one_of(pigments)))))
 foram.mod
 
 plot(foram.mod)
 
+cforam <- fortify_CCA(foram.mod, label.taxa = ftaxa)
+plot.CCA(cforam, xlab = "CCA1", ylab = "CCA2")
 
 
 ##########
