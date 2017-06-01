@@ -77,9 +77,14 @@ RDAoc <- rda(chem_complete[, pig] ~ O2 + TN, data = chem_complete[, !pig], scale
 RDAoc
 
 #macros
-fortify_CCA <- function(x){
+fortify_CCA <- function(x, label.taxa){
   x <- fortify(x, scaling = "symmetric")
   species <- x %>% filter(Score == "species")
+  if(!missing(label.taxa)){
+    species <- species %>% mutate(Label = ifelse(Label %in% label.taxa, Label, NA))
+  } else{
+    species <- species %>% mutate(Label = NA)
+  }
   sites <- x %>% 
     filter(Score == "sites") %>% 
     mutate(Label = Station_code30)
@@ -89,8 +94,9 @@ fortify_CCA <- function(x){
 plot.CCA <- function(x, xlab = "CA1", ylab = "CA2", exp = 0.2){
   ggplot(x$sites, aes(x = Dim1, y = Dim2, label = Label)) + 
     geom_point() +
-    geom_text_repel(size = 3.5) +
     geom_point(data = x$species, shape = 3, colour = "red") +
+    geom_text_repel(size = 3.5) +
+    geom_text_repel(size = 3.5, data = x$species, colour = "red") +
     coord_equal() +
     scale_x_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps) + 
     scale_y_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps) +
@@ -108,12 +114,18 @@ decorana(macro8f30)#long gradient
 macro.ca <- cca(macro8f30 ~ 1, data = select(chem30, -one_of(pigments)))
 screeplot(macro.ca, bstick = TRUE)
 plot(macro.ca)
+mtaxa <- c("Pseudopolydora sp", "Chaetozone setosa", "Mediomastus fragilis", "Capitella capitata", "Thyasira cf. sarsi", "Mediomastus fragilis", "Thyasira equalis", "Spiophanes kroeyeri", "Amphiura chiajei", "Amphiura filiformis", "Scalibregma inflatum" )
+mtaxa2 <- macro %>% select(species, SpeciesMacrofauna) %>% distinct()
+mtaxa2 <- plyr::mapvalues(mtaxa, from = mtaxa2$SpeciesMacrofauna, to = mtaxa2$species)
 
-fmacro <- fortify_CCA(macro.ca)
+setdiff(mtaxa, mtaxa2$SpeciesMacrofauna)
+fmacro <- fortify_CCA(macro.ca, label.taxa = mtaxa2)
 plot.CCA(fmacro)
 
 #unconstrained forams
-ftaxa <- c("Cassidulina laevigata", "Liebusella. goësi", "Micrometula. hyalostriata", "Phainogulmia. aurata", "Textularia. earlandi" and "Recurvoides. trochamminiforme", "Bulimina marginata", "Cribrostomoides. bertheloti", "Cylindrogulmia. alba", "Leptohalysis. scottii" and "Spiroplectamina. biformis", "Stainforthia fusiformis", "Fissurina. sp.", "Bolivina. pseudopunctata") 
+ftaxa <- c("Cassidulina laevigata", "Liebusella goësi", "Micrometula hyalostriata", "Phainogullmia aurata", "Textularia earlandi", "Recurvoides trochamminiforme", "Bulimina marginata", "Cribrostomoides bertheloti", "Cylindrogullmia alba", "Leptohalysis scottii", "Spiroplectamina biformis", "Stainforthia fusiformis", "Fissurina sp 1", "Bolivina pseudopunctata") 
+
+setdiff(ftaxa, names(foram8m30))
 
 decorana(foram8m30)#shortish gradient
 
@@ -121,7 +133,7 @@ foram.ca <- cca(foram8m30 ~ 1, data = select(chem30, -one_of(pigments)))
 screeplot(foram.ca, bstick = TRUE)
 plot(foram.ca)
 
-fforam <- fortify_CCA(foram.ca)
+fforam <- fortify_CCA(foram.ca, label.taxa = ftaxa)
 plot.CCA(fforam)
 
 
