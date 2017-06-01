@@ -77,6 +77,8 @@ RDAoc <- rda(chem_complete[, pig] ~ O2 + TN, data = chem_complete[, !pig], scale
 RDAoc
 
 #macros
+ggpairs(select(chem30, -one_of(pigments)))
+
 decorana(macro8f30)#long gradient
 
 macro.ca <- cca(macro8f30 ~ 1, data = select(chem30, -one_of(pigments)))
