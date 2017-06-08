@@ -75,7 +75,7 @@ macro8g <- macro %>%
 
 ##live forams
 forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where slice_numeric>0 and not Size  = '>500' and slice_numeric<3")) %>%
-  rename(species = SpeciesForam, N = `Number*1`) %>% 
+  rename(species = CodeForam, N = `Number*1`) %>% 
   collect() %>%
   mutate(DAT = ymd(DAT)) %>% 
   mutate(Station_code = cleanStationCodes(Station_code))
@@ -142,6 +142,8 @@ allSites <- list(
   foram = unique(foram8g$Station_code)
 )
 unified_site_list <- Reduce(intersect, allSites) # sites with all variables # would miss abiotic sites
+
+unified_site_list <- setdiff(unified_site_list, c("RC5", "RC9"))# test removal of RC5/RC9
 
 chem0 <- chem0 %>%
   ungroup() %>%
