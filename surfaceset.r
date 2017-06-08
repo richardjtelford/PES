@@ -115,34 +115,37 @@ ggpairs(select(chem30, -one_of(pigments)))
 #unconstrained macro
 decorana(macro8f30)#long gradient
 
-macro.ca <- cca(macro8f30 ~ 1, data = select(chem30, -one_of(pigments)))
-screeplot(macro.ca, bstick = TRUE)
-plot(macro.ca)
+macro.unc <- cca(macro8f30 ~ 1, data = select(chem30, -one_of(pigments)))
+screeplot(macro.unc, bstick = TRUE)
+plot(macro.unc)
 mtaxa <- c("Pseudopolydora sp", "Chaetozone setosa", "Mediomastus fragilis", "Capitella capitata", "Thyasira cf. sarsi", "Mediomastus fragilis", "Thyasira equalis", "Spiophanes kroeyeri", "Amphiura chiajei", "Amphiura filiformis", "Scalibregma inflatum" )
 mtaxa2 <- macro %>% select(species, SpeciesMacrofauna) %>% distinct()
 mtaxa2 <- plyr::mapvalues(mtaxa, from = mtaxa2$SpeciesMacrofauna, to = mtaxa2$species)
 
-setdiff(mtaxa, mtaxa2$SpeciesMacrofauna)
-fmacro <- fortify_CCA(macro.ca, label.taxa = mtaxa2)
+setdiff(mtaxa2, names(macro8f30)) # misspelt or missing taxa
+fmacro <- fortify_CCA(macro.unc, label.taxa = mtaxa2)
 plot.CCA(fmacro)
 
 #unconstrained forams
 ftaxa <- c("Cassidulina laevigata", "Liebusella goësi", "Micrometula hyalostriata", "Phainogullmia aurata", "Textularia earlandi", "Recurvoides trochamminiforme", "Bulimina marginata", "Cribrostomoides bertheloti", "Cylindrogullmia alba", "Leptohalysis scottii", "Spiroplectamina biformis", "Stainforthia fusiformis", "Fissurina sp 1", "Bolivina pseudopunctata") 
 
-setdiff(ftaxa, names(foram8m30))
+ftaxa2 <- forams %>% select(species, SpeciesForam) %>% distinct()
+ftaxa2 <- plyr::mapvalues(ftaxa, from = ftaxa2$SpeciesForam, to = ftaxa2$species)
 
-decorana(foram8m30)#shortish gradient
+setdiff(ftaxa2, names(foram8m30)) #MISSPELT taxa
 
-foram.ca <- cca(foram8m30 ~ 1, data = select(chem30, -one_of(pigments)))
-screeplot(foram.ca, bstick = TRUE)
-plot(foram.ca)
+decorana(foram8m30)#short gradient
 
-fforam <- fortify_CCA(foram.ca, label.taxa = ftaxa)
+foram.unc <- rda(foram8m30 ~ 1, data = select(chem30, -one_of(pigments)))
+screeplot(foram.unc, bstick = TRUE)
+plot(foram.unc)
+
+fforam <- fortify_CCA(foram.unc, label.taxa = ftaxa2)
 plot.CCA(fforam)
 
 
 #constrained macros
-macro.mod <- ordistep(macro.ca, reformulate(names(select(chem30, -one_of(pigments)))))
+macro.mod <- ordistep(macro.unc, reformulate(names(select(chem30, -one_of(pigments)))))
 macro.mod
 
 plot(macro.mod)
@@ -151,12 +154,12 @@ plot.CCA(cmacro, xlab = "CCA1", ylab = "CCA2")
 
 
 #constrained forams
-foram.mod <- ordistep(foram.ca, reformulate(names(select(chem30, -one_of(pigments)))))
+foram.mod <- ordistep(foram.unc, reformulate(names(select(chem30, -one_of(pigments)))))
 foram.mod
 
 plot(foram.mod)
 
-cforam <- fortify_CCA(foram.mod, label.taxa = ftaxa)
+cforam <- fortify_CCA(foram.mod, label.taxa = ftaxa2)
 plot.CCA(cforam, xlab = "CCA1", ylab = "CCA2")
 
 
