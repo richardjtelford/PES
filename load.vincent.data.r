@@ -6,6 +6,7 @@ library("entropy")
 library("lubridate")
 library("assertr")
 library("assertthat")
+library("dbplyr")
 
 #functions
 div <- function(x) {
@@ -49,8 +50,8 @@ stations <- tbl(con, "PES_DB_stations") %>%
 
 ##macrofauna
 macro <- tbl(con, "PES_DB_macrofauna_at_forams_stations") %>%
-  rename(species = CodeMacrofauna, N = `Number*1`) %>% 
   collect() %>%
+  rename(species = CodeMacrofauna, N = `Number*1`) %>%
   mutate(DAT = ymd(DAT)) %>% 
   mutate(Station_code = cleanStationCodes(Station_code))
 
@@ -75,8 +76,8 @@ macro8g <- macro %>%
 
 ##live forams
 forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where slice_numeric>0 and not Size  = '>500' and slice_numeric<3")) %>%
-  rename(species = CodeForam, N = `Number*1`) %>% 
   collect() %>%
+  rename(species = CodeForam, N = `Number*1`) %>% 
   mutate(DAT = ymd(DAT)) %>% 
   mutate(Station_code = cleanStationCodes(Station_code))
 
@@ -100,14 +101,14 @@ foram8g <- forams %>%
 
 ##dead forams
 dead <- tbl(con, "PES_DB_foraminifera_species_dead_data") %>%
-  rename(N = `Number*1`) %>%
   collect() %>% 
+  rename(N = `Number*1`) %>%
   mutate(Station_code = cleanStationCodes(Station_code))
 
 ##foram species
 fspp <- tbl(con,"PES_DB_foraminifera_species_list") %>%
-  rename(TestStructure = `Test structure`, Sensitivity = `Sensitivity (for ISI)`) %>%
-  collect()
+  collect() %>%
+  rename(TestStructure = `Test structure`, Sensitivity = `Sensitivity (for ISI)`) 
 
 ##chemistry
 #SQL was "SELECT STAS, Chemical_species, Avg(IIf([Value]<-98,0,[value])) AS Val FROM PES_db_chemistry_data_flat WHERE (((DATE)>20050000) AND ((Slice_numeric)<1 Or (Slice_numeric) Is Null)) GROUP BY STAS, Chemical_species"
