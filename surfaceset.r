@@ -36,7 +36,7 @@ f.pca.sites <- f.pca %>%
 propVar <- eigenvals(chem.pca) / sum(eigenvals(chem.pca)) * 100
 propVar <- format(propVar, digits = 1)
 
-ggplot(f.pca.sites, aes(x = Dim1, y = Dim2, label = Label)) + 
+ggplot(f.pca.sites, aes(x = PC1, y = PC2, label = Label)) + 
   geom_point() +
   geom_text_repel(size = 3.5) +
   geom_axis(data = f.pca.species, parse = TRUE) +
@@ -81,7 +81,11 @@ fortify_CCA <- function(x, label.taxa){
   x <- fortify(x, scaling = "symmetric")
   species <- x %>% filter(Score == "species")
   if(!missing(label.taxa)){
-    species <- species %>% mutate(Label = ifelse(Label %in% label.taxa, Label, NA))
+    species <- species %>% 
+      mutate(
+        Label = as.character(Label),
+        Label = ifelse(Label %in% label.taxa, Label, NA)
+      )
   } else{
     species <- species %>% mutate(Label = NA)
   }
@@ -94,8 +98,9 @@ fortify_CCA <- function(x, label.taxa){
   list(sites = sites, species = species, biplot = biplot)
 }
 
-plot.CCA <- function(x, xlab = "CA1", ylab = "CA2", exp = 0.2){
-  ggplot(x$sites, aes(x = Dim1, y = Dim2, label = Label)) + 
+plot.CCA <- function(x, which = 1:2, exp = 0.2){
+  cols <- names(x$sites[which + 2])
+  ggplot(x$sites, aes_string(x = cols[1], y = cols[2], label = "Label")) + 
     geom_point() +
     geom_point(data = x$species, shape = 3, colour = "red") +
     geom_text_repel(size = 3.5) +
@@ -104,7 +109,7 @@ plot.CCA <- function(x, xlab = "CA1", ylab = "CA2", exp = 0.2){
     coord_equal() +
     scale_x_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps * 10) + 
     scale_y_continuous(expand = c(exp, 0), minor_breaks = .Machine$double.eps * 10) +
-    labs(x = xlab, y = ylab) +
+#    labs(x = xlab, y = ylab) +
     theme_bw() +
     theme(panel.grid.major = element_blank())
 }
@@ -150,7 +155,7 @@ macro.mod
 
 plot(macro.mod)
 cmacro <- fortify_CCA(macro.mod, label.taxa = mtaxa2)
-plot.CCA(cmacro, xlab = "CCA1", ylab = "CCA2")
+plot.CCA(cmacro)
 
 
 #constrained forams
@@ -160,7 +165,7 @@ foram.mod
 plot(foram.mod)
 
 cforam <- fortify_CCA(foram.mod, label.taxa = ftaxa2)
-plot.CCA(cforam, xlab = "CCA1", ylab = "CCA2")
+plot.CCA(cforam)
 
 
 ##########
