@@ -53,7 +53,10 @@ macro <- tbl(con, "PES_DB_macrofauna_at_forams_stations") %>%
   collect() %>%
   rename(species = CodeMacrofauna, N = `Number*1`) %>%
   mutate(DAT = ymd(DAT)) %>% 
-  mutate(Station_code = cleanStationCodes(Station_code))
+  mutate(
+    Station_code = cleanStationCodes(Station_code), 
+    SpeciesMacrofauna = recode(SpeciesMacrofauna, "Thyasira sarsi" = "Thyasira sarsii", "Thyasira cf. sarsi" = "Thyasira cf. sarsii")
+  )
 
 #replicate level
 macro3r <- macro %>% 

@@ -123,7 +123,7 @@ decorana(macro8f30)#long gradient
 macro.unc <- cca(macro8f30 ~ 1, data = select(chem30, -one_of(pigments)))
 screeplot(macro.unc, bstick = TRUE)
 plot(macro.unc)
-mtaxa <- c("Pseudopolydora sp", "Chaetozone setosa", "Mediomastus fragilis", "Capitella capitata", "Thyasira cf. sarsi", "Mediomastus fragilis", "Thyasira equalis", "Spiophanes kroeyeri", "Amphiura chiajei", "Amphiura filiformis", "Scalibregma inflatum" )
+mtaxa <- c("Pseudopolydora sp", "Chaetozone setosa", "Mediomastus fragilis", "Capitella capitata", "Thyasira sarsii", "Mediomastus fragilis", "Thyasira equalis", "Spiophanes kroeyeri", "Amphiura chiajei", "Amphiura filiformis", "Scalibregma inflatum" )
 mtaxa2 <- macro %>% select(species, SpeciesMacrofauna) %>% distinct()
 mtaxa2 <- plyr::mapvalues(mtaxa, from = mtaxa2$SpeciesMacrofauna, to = mtaxa2$species)
 
@@ -132,7 +132,7 @@ fmacro <- fortify_CCA(macro.unc, label.taxa = mtaxa2)
 plot.CCA(fmacro)
 
 #unconstrained forams
-ftaxa <- c("Cassidulina laevigata", "Liebusella goësi", "Micrometula hyalostriata", "Phainogullmia aurata", "Textularia earlandi", "Recurvoides trochamminiforme", "Bulimina marginata", "Cribrostomoides bertheloti", "Cylindrogullmia alba", "Leptohalysis scottii", "Spiroplectamina biformis", "Stainforthia fusiformis", "Fissurina sp 1", "Bolivina pseudopunctata") 
+ftaxa <- c("Cassidulina laevigata", "Liebusella goësi", "Micrometula hyalostriata", "Phainogullmia aurata", "Textularia earlandi", "Recurvoides trochamminiforme", "Bulimina marginata", "Discorbinella bertheloti", "Cylindrogullmia alba", "Leptohalysis scottii", "Spiroplectammina biformis", "Stainforthia fusiformis", "Fissurina sp 1", "Bolivinellina pseudopunctata") 
 
 ftaxa2 <- forams %>% select(species, SpeciesForam) %>% distinct()
 ftaxa2 <- plyr::mapvalues(ftaxa, from = ftaxa2$SpeciesForam, to = ftaxa2$species)
