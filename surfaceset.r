@@ -1,5 +1,8 @@
 #### Analyses of surface data
 
+#set seed to make analysis reproducible
+set.seed(9527) #from random.org 
+
 ## load packages
 library("vegan")
 library("cocorresp")
@@ -64,7 +67,7 @@ ordisurf(RDA0, chem_complete$O2, add = TRUE)
 
 plot(chem_complete$O2, scores(RDA0, disp = "sites")[, 1])
 scatter.smooth(chem_complete$O2, scores(RDA0, disp = "sites")[, 1])
-identify(chem_complete$O2, scores(RDA0, disp = "sites")[, 1], chem_complete$Station_code)
+#identify(chem_complete$O2, scores(RDA0, disp = "sites")[, 1], chem_complete$Station_code)
 
 RDA1 <- ordistep(RDA0, reformulate(names(select(chem_complete, -which(pig), -Station_code))), permutations = how(nperm = 999))
 RDA1
@@ -168,48 +171,13 @@ cforam <- fortify_CCA(foram.mod, label.taxa = ftaxa2)
 plot.CCA(cforam)
 
 
-##########
-#forams
-div.f<-tapply(diversity(foram8r),unlist(strsplit(rownames(foram8r),":"))[c(T,F)],sd)
-div.m<-tapply(diversity(macro8r),unlist(strsplit(rownames(macro8r),":"))[c(T,F)],function(x)sd(x[1:min(3,length(x))]))
-div.m <- div.m[names(div.m) %in% names(div.f)]
-div.f <- div.f[names(div.f) %in% names(div.m)]
-identical(names(div.f), names(div.m))
-
-
-boxplot(list(foram=div.f,macro=div.m), notch=TRUE)
-wilcox.test(div.f,div.m, paired=TRUE)             #try paired analysis?
-
-div.f<-tapply(rarefy(foram8r,10),unlist(strsplit(rownames(foram8r),":"))[c(T,F)],sd)
-div.m<-tapply(rarefy(macro8r,10),unlist(strsplit(rownames(macro8r),":"))[c(T,F)],function(x)sd(x[1:min(3,length(x))]))
-div.m <- div.m[names(div.m) %in% names(div.f)]
-div.f <- div.f[names(div.f) %in% names(div.m)]
-identical(names(div.f), names(div.m))
-
-boxplot(list(foram = div.f, macro = div.m))
-wilcox.test(div.f, div.m, paired = TRUE)
-
-
-
-plot(rowSums(foram38),rowSums( foram83), xlab="2003 no individuals",ylab="2008 no individuals")
-abline(0,1)
-text(rowSums(foram38),rowSums( foram83), labels=rownames(foram83))
-
-
-x11()
-plot(seq(10,rowSums(foram8)[1]/8,10),sapply(seq(10,rowSums(foram8)[1]/8,10),function(n)rarefy(foram8[1,,drop=FALSE]/8,n)))
-
-
-#procrustes analysis
-foram.cca <- cca(foram8m30 ~ 1)
-macro.cca <- cca(macro8f30 ~ 1)
-
-pt <- protest(foram.cca, macro.cca, permutations = 999)
+##procrustes analysis
+pt <- protest(foram.unc, macro.unc, permutations = 999)
 pt
 plot(pt)
 
 
-#Mantel tests
+##Mantel tests
 dist_macro <- vegdist(macro8f30)
 dist_foram <- vegdist(foram8m30)
 ggplot(data_frame(macro = as.vector(dist_macro), 
@@ -221,7 +189,7 @@ ggplot(data_frame(macro = as.vector(dist_macro),
 mantel(dist_macro, dist_foram)
 
 
-#co=correspondance
+##co=correspondance
 ## predictive CoCA using SIMPLS and formula interface
 
 coco.pred <- coca(macro8f30 ~ ., data = foram8m30)
@@ -297,7 +265,3 @@ autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw()
 a <- autoplot.coco(coco.pred, which = "predictor", envfit = sol.pred) + ggtitle("Predictor - forams")
 b <- autoplot.coco(coco.pred, which = "response", envfit = sol.resp) + ggtitle("Response - macrofauna")
 gridExtra::grid.arrange(a, b, nrow = 1)
-
-
-plot(diversity(macro8gf),diversity(foram8m))
-abline(0,1)
