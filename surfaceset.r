@@ -153,7 +153,7 @@ plot.CCA(fforam)
 
 
 #constrained macros
-macro.mod <- ordistep(macro.unc, reformulate(names(select(chem30, -one_of(pigments)))))
+macro.mod <- ordistep(macro.unc, reformulate(names(select(chem30, -one_of(pigments)))), permutations = how(nperm = 999))
 macro.mod
 
 plot(macro.mod)
@@ -162,7 +162,7 @@ plot.CCA(cmacro)
 
 
 #constrained forams
-foram.mod <- ordistep(foram.unc, reformulate(names(select(chem30, -one_of(pigments)))))
+foram.mod <- ordistep(foram.unc, reformulate(names(select(chem30, -one_of(pigments)))), permutations = how(nperm = 999))
 foram.mod
 
 plot(foram.mod)
