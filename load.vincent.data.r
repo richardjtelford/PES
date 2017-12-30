@@ -34,7 +34,7 @@ group_station <- . %>%
   sppProcess()
 group_station_minCount <- . %>% 
   group_by(Station_code) %>% 
-  filter(n() > minCount) %>% 
+  filter(sum(N) > minCount) %>% 
   group_by(Station_code, species) %>% 
   sppProcess()
 
