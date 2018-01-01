@@ -82,7 +82,9 @@ forams <- tbl(con, sql("select * from PES_DB_foraminifera_species_data where sli
   collect() %>%
   rename(species = CodeForam, N = `Number*1`) %>% 
   mutate(DAT = ymd(DAT)) %>% 
-  mutate(Station_code = cleanStationCodes(Station_code))
+  mutate(Station_code = cleanStationCodes(Station_code)) %>% 
+  mutate(SpeciesForam = recode(SpeciesForam, "Cibicides bertheloti" = "Discorbinella bertheloti"),
+         species = recode(species, "CIBIBER" = "DISCBER"))
 
 #replicate level
 foram3r <- forams %>% 
