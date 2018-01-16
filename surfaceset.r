@@ -265,3 +265,33 @@ autoplot.coco <- function(x, which = c("response", "predictor"), th = theme_bw()
 a <- autoplot.coco(coco.pred, which = "predictor", envfit = sol.pred) + ggtitle("Predictor - forams")
 b <- autoplot.coco(coco.pred, which = "response", envfit = sol.resp) + ggtitle("Response - macrofauna")
 gridExtra::grid.arrange(a, b, nrow = 1)
+
+
+
+### diversity
+# on sites with > 30 individuals
+macro4div<-macro8g %>% filter(Station_code %in% unified_site_list) %>% group_station_minCount()
+foram4div<-foram8g %>% filter(Station_code %in% unified_site_list) %>% group_station_minCount()
+foram4div %<>% filter(Station_code %in% macro4div$Station_code)
+macro4div %<>% filter(Station_code %in% foram4div$Station_code)
+
+foram_div <- foram4div %>% select(-Station_code) %>% div() %>% exp()
+
+macro_div <- macro4div %>% select(-Station_code) %>% div() %>% exp()
+
+
+cor.test(foram_div, macro_div)
+data_frame(foram_div, macro_div) %>% 
+  ggplot(aes(x = macro_div, y = foram_div)) + 
+  geom_point()
+
+#all sites with >0 individuals - bad idea with ChaoShen
+inner_join(
+  macro8f %>% gather(key = species, value = N, -Station_code) %>%  group_by(Station_code) %>% summarise(div = exp(diversity(N))),
+  foram8m %>% gather(key = species, value = N, -Station_code) %>% group_by(Station_code) %>% summarise(div = exp(diversity(N))),
+  by = "Station_code",
+  suffix = c("_macro", "_foram")
+) %>% 
+  ggplot(aes(x = div_macro, y = div_foram)) + 
+  geom_point()
+

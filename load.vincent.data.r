@@ -241,4 +241,4 @@ chem30 <- chem %>% filter(Station_code %in% Station_code30) %>%
   select(-Station_code)
 
 #tidy up
-rm(group_station_minCount, group_station, group_replicate, cleanStationCodes)
+#rm(group_station_minCount, group_station, group_replicate, cleanStationCodes)
